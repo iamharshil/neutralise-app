@@ -39,6 +39,7 @@ export default function signup() {
                 onChangeText={setName}
                 keyboardType="ascii-capable"
                 autoCapitalize="words"
+                placeholderTextColor="#555"
             />
 
             <TextInput
@@ -48,6 +49,7 @@ export default function signup() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                placeholderTextColor="#555"
             />
 
             <TextInput
@@ -56,12 +58,13 @@ export default function signup() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
+                placeholderTextColor="#555"
             />
 
             <Button title="Sign Up" onPress={handleSignUp} disabled={pending} />
 
             <Link href="/(auth)/login" style={styles.link}>
-
+                <Text>Already have account? Login</Text>
             </Link>
         </View>
     )
