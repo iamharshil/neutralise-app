@@ -3,7 +3,7 @@ import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import fetchCall from "@/utils/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Button } from "tamagui";
 
 export default function Settings() {
@@ -40,7 +40,7 @@ export default function Settings() {
 	};
 
 	return (
-		<View style={dynamicStyles.container}>
+		<ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
 			<Text style={dynamicStyles.title}>Settings</Text>
 
 			{/* Theme Toggle Section */}
@@ -63,7 +63,8 @@ export default function Settings() {
 				<MaterialIcons name="logout" size={20} color={colors.text} />
 				<Text style={dynamicStyles.logoutButtonText}>Log Out</Text>
 			</Button>
-		</View>
+			<View style={styles.footer} />
+		</ScrollView>
 	);
 }
 
@@ -125,5 +126,8 @@ const styles = StyleSheet.create({
 	logoutButtonText: {
 		fontSize: 16,
 		fontWeight: "600",
+	},
+	footer: {
+		height: Platform.OS === "android" ? 80 : 32,
 	},
 });

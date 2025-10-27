@@ -1,3 +1,4 @@
+import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -8,6 +9,8 @@ interface CalendarProps {
 }
 
 export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) {
+	const theme = useThemeStore((state) => state.theme);
+	const colors = themeColors[theme];
 	const [currentMonth, setCurrentMonth] = useState(new Date());
 	const [selected, setSelected] = useState(selectedDate || new Date());
 
@@ -66,20 +69,20 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
 	};
 
 	return (
-		<View style={styles.container}>
+		<View style={[styles.container, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
 			<View style={styles.header}>
 				<TouchableOpacity onPress={handlePrevMonth}>
-					<MaterialIcons name="chevron-left" size={28} color="#3b82f6" />
+					<MaterialIcons name="chevron-left" size={28} color={colors.accent} />
 				</TouchableOpacity>
-				<Text style={styles.monthYear}>{monthName}</Text>
+				<Text style={[styles.monthYear, { color: colors.text }]}>{monthName}</Text>
 				<TouchableOpacity onPress={handleNextMonth}>
-					<MaterialIcons name="chevron-right" size={28} color="#3b82f6" />
+					<MaterialIcons name="chevron-right" size={28} color={colors.accent} />
 				</TouchableOpacity>
 			</View>
 
 			<View style={styles.weekDays}>
 				{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-					<Text key={day} style={styles.weekDay}>
+					<Text key={day} style={[styles.weekDay, { color: colors.textSecondary }]}>
 						{day}
 					</Text>
 				))}
@@ -91,13 +94,18 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
 						<TouchableOpacity
 							key={`day-${day}-${dayIndex}-${currentMonth.getMonth()}`}
 							onPress={() => day && handleDateSelect(day)}
-							style={[styles.dayButton, isToday(day) && styles.todayButton, isSelected(day) && styles.selectedButton]}
+							style={[
+								styles.dayButton,
+								isToday(day) && [styles.todayButton, { borderColor: colors.accent, backgroundColor: `${colors.accent}15` }],
+								isSelected(day) && [styles.selectedButton, { backgroundColor: colors.accent }],
+							]}
 						>
 							<Text
 								style={[
 									styles.dayText,
+									{ color: colors.text },
 									!day && styles.emptyDay,
-									isToday(day) && styles.todayText,
+									isToday(day) && [styles.todayText, { color: colors.accent }],
 									isSelected(day) && styles.selectedText,
 								]}
 							>
@@ -113,14 +121,9 @@ export default function Calendar({ onDateSelect, selectedDate }: CalendarProps) 
 
 const styles = StyleSheet.create({
 	container: {
-		backgroundColor: "#fff",
-		borderRadius: 22,
+		borderRadius: 16,
 		padding: 16,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
+		borderWidth: 1,
 	},
 	header: {
 		flexDirection: "row",
@@ -131,7 +134,6 @@ const styles = StyleSheet.create({
 	monthYear: {
 		fontSize: 18,
 		fontWeight: "bold",
-		color: "#22223b",
 	},
 	weekDays: {
 		flexDirection: "row",
@@ -142,7 +144,6 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		fontSize: 12,
 		fontWeight: "600",
-		color: "#4a4e69",
 	},
 	week: {
 		flexDirection: "row",
@@ -158,24 +159,18 @@ const styles = StyleSheet.create({
 	},
 	dayText: {
 		fontSize: 14,
-		color: "#22223b",
 		fontWeight: "500",
 	},
 	emptyDay: {
 		color: "transparent",
 	},
 	todayButton: {
-		backgroundColor: "#e0e7ff",
 		borderWidth: 2,
-		borderColor: "#3b82f6",
 	},
 	todayText: {
-		color: "#3b82f6",
 		fontWeight: "bold",
 	},
-	selectedButton: {
-		backgroundColor: "#3b82f6",
-	},
+	selectedButton: {},
 	selectedText: {
 		color: "#fff",
 		fontWeight: "bold",

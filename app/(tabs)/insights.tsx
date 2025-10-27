@@ -1,7 +1,8 @@
+import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Card } from "tamagui";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface InsightData {
 	label: string;
@@ -21,6 +22,10 @@ interface MacroBreakdown {
 type TimeRange = "week" | "month" | "year";
 
 export default function Insights() {
+	const theme = useThemeStore((state) => state.theme);
+	const toggleTheme = useThemeStore((state) => state.toggleTheme);
+	const colors = themeColors[theme];
+	const insets = useSafeAreaInsets();
 	const [timeRange, setTimeRange] = useState<TimeRange>("week");
 
 	const insights: InsightData[] = [
@@ -77,11 +82,36 @@ export default function Insights() {
 		{ week: "Week 4", avg: 2100, goal: 2000 },
 	];
 
+	const dynamicStyles = {
+		container: { ...styles.container, backgroundColor: colors.bg, paddingTop: insets.top + 12 },
+		header: styles.header,
+		title: { ...styles.title, color: colors.text },
+		subtitle: { ...styles.subtitle, color: colors.textSecondary },
+		insightCard: { backgroundColor: colors.bgSecondary, borderColor: colors.border },
+		insightLabel: { color: colors.textSecondary },
+		insightValue: { color: colors.text },
+		insightChange: { color: colors.textSecondary },
+		timeRangeButton: { borderColor: colors.border },
+		timeRangeButtonActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+		timeRangeButtonText: { color: colors.text },
+		timeRangeButtonTextActive: { color: "#fff" },
+		chartBar: { backgroundColor: colors.bgTertiary },
+		macroCard: { backgroundColor: colors.bgSecondary, borderColor: colors.border },
+		macroLabel: { color: colors.textSecondary },
+		macroValue: { color: colors.text },
+		sectionTitle: { color: colors.text },
+	};
+
 	return (
-		<ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-			<View style={styles.header}>
-				<Text style={styles.title}>Insights</Text>
-				<Text style={styles.subtitle}>Your nutrition analytics</Text>
+		<ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
+			<View style={styles.headerRow}>
+				<View>
+					<Text style={dynamicStyles.title}>Insights</Text>
+					<Text style={dynamicStyles.subtitle}>Your nutrition analytics</Text>
+				</View>
+				<TouchableOpacity onPress={toggleTheme} style={styles.themeToggle}>
+					<MaterialIcons name={theme === "dark" ? "light-mode" : "dark-mode"} size={24} color={colors.accent} />
+				</TouchableOpacity>
 			</View>
 
 			{/* Time Range Selector */}
@@ -102,22 +132,35 @@ export default function Insights() {
 			{/* Key Metrics */}
 			<View style={styles.insightsGrid}>
 				{insights.map((insight) => (
-					<Card key={`insight-${insight.label}`} style={styles.insightCard}>
+					<View
+						key={`insight-${insight.label}`}
+						style={[styles.insightCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}
+					>
 						<View style={styles.insightIconContainer}>
-							<MaterialIcons name={insight.icon as keyof typeof MaterialIcons.glyphMap} size={20} color="#3b82f6" />
+							<MaterialIcons
+								name={insight.icon as keyof typeof MaterialIcons.glyphMap}
+								size={20}
+								color={colors.accent}
+							/>
 						</View>
-						<Text style={styles.insightLabel}>{insight.label}</Text>
-						<Text style={styles.insightValue}>{insight.value}</Text>
-						<Text style={[styles.insightChange, insight.isPositive ? styles.positive : styles.negative]}>
+						<Text style={[styles.insightLabel, { color: colors.textSecondary }]}>{insight.label}</Text>
+						<Text style={[styles.insightValue, { color: colors.text }]}>{insight.value}</Text>
+						<Text
+							style={[
+								styles.insightChange,
+								insight.isPositive ? styles.positive : styles.negative,
+								{ color: insight.isPositive ? colors.green : colors.red },
+							]}
+						>
 							{insight.change}
 						</Text>
-					</Card>
+					</View>
 				))}
 			</View>
 
 			{/* Macro Breakdown */}
-			<Card style={styles.macroCard}>
-				<Text style={styles.cardTitle}>Today's Macro Breakdown</Text>
+			<View style={[styles.macroCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+				<Text style={[styles.cardTitle, { color: colors.text }]}>Today's Macro Breakdown</Text>
 				<View style={styles.macroContainer}>
 					<View style={styles.macroList}>
 						{macroBreakdown.map((macro) => (
@@ -154,10 +197,10 @@ export default function Insights() {
 						))}
 					</View>
 				</View>
-			</Card>
+			</View>
 
 			{/* Weekly Trend */}
-			<Card style={styles.trendCard}>
+			<View style={[styles.trendCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
 				<Text style={styles.cardTitle}>Weekly Trend</Text>
 				<View style={styles.trendData}>
 					{weeklyData.map((item) => (
@@ -173,43 +216,45 @@ export default function Insights() {
 									]}
 								/>
 							</View>
-							<Text style={styles.trendDay}>{item.day}</Text>
-							<Text style={styles.trendValue}>{item.calories}</Text>
+							<Text style={[styles.trendDay, { color: colors.textSecondary }]}>{item.day}</Text>
+							<Text style={[styles.trendValue, { color: colors.text }]}>{item.calories}</Text>
 						</View>
 					))}
 				</View>
-			</Card>
+			</View>
 
 			{/* Monthly Stats */}
 			{timeRange === "month" && (
-				<Card style={styles.statsCard}>
-					<Text style={styles.cardTitle}>Monthly Breakdown</Text>
+				<View style={[styles.statsCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+					<Text style={[styles.cardTitle, { color: colors.text }]}>Monthly Breakdown</Text>
 					{monthlyStats.map((stat) => (
 						<View key={`month-${stat.week}`} style={styles.statRow}>
-							<Text style={styles.statLabel}>{stat.week}</Text>
-							<View style={styles.statBarBackground}>
-								<View style={[styles.statBar, { width: `${(stat.avg / 2200) * 100}%` }]} />
+							<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.week}</Text>
+							<View style={[styles.statBarBackground, { backgroundColor: colors.bgTertiary }]}>
+								<View
+									style={[styles.statBar, { width: `${(stat.avg / 2200) * 100}%`, backgroundColor: colors.accent }]}
+								/>
 							</View>
-							<Text style={styles.statValue}>{stat.avg} cal</Text>
+							<Text style={[styles.statValue, { color: colors.text }]}>{stat.avg} cal</Text>
 						</View>
 					))}
-				</Card>
+				</View>
 			)}
 
 			{/* Summary */}
-			<Card style={styles.summaryCard}>
+			<View style={[styles.summaryCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
 				<View style={styles.summaryRow}>
 					<View>
-						<Text style={styles.summaryLabel}>Total Calories This Week</Text>
-						<Text style={styles.summaryValue}>14,220</Text>
+						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Total Calories This Week</Text>
+						<Text style={[styles.summaryValue, { color: colors.text }]}>14,220</Text>
 					</View>
-					<View style={styles.summaryDivider} />
+					<View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
 					<View>
-						<Text style={styles.summaryLabel}>Weekly Average</Text>
-						<Text style={styles.summaryValue}>2,031</Text>
+						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Weekly Average</Text>
+						<Text style={[styles.summaryValue, { color: colors.text }]}>2,031</Text>
 					</View>
 				</View>
-			</Card>
+			</View>
 
 			<View style={styles.footer} />
 		</ScrollView>
@@ -225,6 +270,15 @@ const styles = StyleSheet.create({
 	header: {
 		marginTop: 60,
 		marginBottom: 24,
+	},
+	headerRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "flex-start",
+		marginBottom: 24,
+	},
+	themeToggle: {
+		padding: 8,
 	},
 	title: {
 		fontSize: 30,
@@ -499,6 +553,6 @@ const styles = StyleSheet.create({
 		backgroundColor: "#bfdbfe",
 	},
 	footer: {
-		height: 32,
+		height: Platform.OS === "android" ? 80 : 32,
 	},
 });

@@ -1,20 +1,61 @@
 import Calendar from "@/components/calendar";
+import { themeColors, useThemeStore } from "@/hooks/use-theme";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Card } from "tamagui";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CalendarScreen() {
+	const theme = useThemeStore((state) => state.theme);
+	const toggleTheme = useThemeStore((state) => state.toggleTheme);
+	const colors = themeColors[theme];
+	const insets = useSafeAreaInsets();
 	const [selectedDate, setSelectedDate] = useState(new Date());
 
 	// Mock data for selected date
 	const getMealsForDate = (date: Date) => {
 		const dateString = date.toLocaleDateString();
-		const mockMeals: Record<string, Array<{ name: string; calories: number; time: string }>> = {
+		const mockMeals: Record<
+			string,
+			Array<{
+				name: string;
+				calories: number;
+				time: string;
+				icon: string;
+				protein?: number;
+				carbs?: number;
+				fat?: number;
+			}>
+		> = {
 			[new Date().toLocaleDateString()]: [
-				{ name: "Oatmeal with Berries", calories: 350, time: "08:00 AM" },
-				{ name: "Grilled Chicken Salad", calories: 450, time: "01:00 PM" },
-				{ name: "Salmon with Rice", calories: 600, time: "07:00 PM" },
-				{ name: "Greek Yogurt", calories: 150, time: "10:00 PM" },
+				{
+					name: "Oatmeal with Berries",
+					calories: 350,
+					time: "08:00 AM",
+					icon: "breakfast-dining",
+					protein: 12,
+					carbs: 54,
+					fat: 6,
+				},
+				{
+					name: "Grilled Chicken Salad",
+					calories: 450,
+					time: "01:00 PM",
+					icon: "restaurant",
+					protein: 42,
+					carbs: 28,
+					fat: 15,
+				},
+				{
+					name: "Salmon with Rice",
+					calories: 600,
+					time: "07:00 PM",
+					icon: "set-meal",
+					protein: 38,
+					carbs: 65,
+					fat: 18,
+				},
+				{ name: "Greek Yogurt", calories: 150, time: "10:00 PM", icon: "local-dining", protein: 15, carbs: 12, fat: 4 },
 			],
 		};
 		return mockMeals[dateString] || [];
@@ -23,81 +64,150 @@ export default function CalendarScreen() {
 	const meals = getMealsForDate(selectedDate);
 	const totalCalories = meals.reduce((sum, meal) => sum + meal.calories, 0);
 
+	const dynamicStyles = {
+		container: { ...styles.container, backgroundColor: colors.bg, paddingTop: insets.top + 12 },
+		header: styles.header,
+		title: { ...styles.title, color: colors.text },
+		subtitle: { ...styles.subtitle, color: colors.textSecondary },
+	};
+
 	return (
-		<ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-			<View style={styles.header}>
-				<Text style={styles.title}>Calendar</Text>
-				<Text style={styles.subtitle}>View your daily nutrition</Text>
+		<ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
+			<View style={styles.headerRow}>
+				<View>
+					<Text style={dynamicStyles.title}>Calendar</Text>
+					<Text style={dynamicStyles.subtitle}>Track your meals</Text>
+				</View>
+				<TouchableOpacity onPress={toggleTheme} style={styles.themeToggle}>
+					<MaterialIcons name={theme === "dark" ? "light-mode" : "dark-mode"} size={24} color={colors.accent} />
+				</TouchableOpacity>
 			</View>
 
 			<View style={styles.calendarContainer}>
 				<Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} />
 			</View>
 
-			<View style={styles.selectedDateInfo}>
-				<Text style={styles.selectedDateLabel}>Selected Date</Text>
-				<Text style={styles.selectedDateValue}>
-					{selectedDate.toLocaleDateString("en-US", {
-						weekday: "long",
-						year: "numeric",
-						month: "long",
-						day: "numeric",
-					})}
-				</Text>
+			{/* Date Info Card */}
+			<View style={[styles.dateCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+				<View style={styles.dateIconContainer}>
+					<MaterialIcons name="calendar-today" size={24} color={colors.accent} />
+				</View>
+				<View style={styles.dateContent}>
+					<Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Selected Date</Text>
+					<Text style={[styles.dateValue, { color: colors.text }]}>
+						{selectedDate.toLocaleDateString("en-US", {
+							weekday: "short",
+							month: "short",
+							day: "numeric",
+						})}
+					</Text>
+				</View>
+				<View style={styles.dateStats}>
+					<Text style={[styles.statsNumber, { color: colors.accent }]}>{meals.length}</Text>
+					<Text style={[styles.statsLabel, { color: colors.textSecondary }]}>meals</Text>
+				</View>
 			</View>
 
-			{/* Daily Summary */}
-			<Card style={styles.summaryCard}>
-				<View style={styles.summaryHeader}>
+			{/* Calorie Summary */}
+			<View style={[styles.summaryCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+				<View style={styles.summaryTop}>
 					<View>
-						<Text style={styles.summaryLabel}>Total Calories</Text>
-						<Text style={styles.summaryValue}>{totalCalories}</Text>
+						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Daily Intake</Text>
+						<Text style={[styles.summaryValue, { color: colors.text }]}>{totalCalories}</Text>
+						<Text style={[styles.summarySubtext, { color: colors.textTertiary }]}>kcal</Text>
 					</View>
+					<View style={styles.summaryDivider} />
+					<View>
+						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Daily Goal</Text>
+						<Text style={[styles.summaryValue, { color: colors.text }]}>2,000</Text>
+						<Text style={[styles.summarySubtext, { color: colors.textTertiary }]}>kcal</Text>
+					</View>
+					<View style={styles.summaryDivider} />
 					<View style={styles.summaryBadge}>
-						<Text style={styles.summaryPercent}>{Math.round((totalCalories / 2000) * 100)}%</Text>
-						<Text style={styles.summaryGoal}>of 2,000</Text>
+						<Text style={[styles.summaryPercent, { color: colors.accent }]}>
+							{Math.round((totalCalories / 2000) * 100)}%
+						</Text>
+						<Text style={[styles.summaryBadgeLabel, { color: colors.textSecondary }]}>done</Text>
 					</View>
 				</View>
 
 				{totalCalories > 0 && (
-					<View style={styles.progressBar}>
+					<View style={[styles.progressBar, { backgroundColor: colors.bgTertiary }]}>
 						<View
 							style={[
 								styles.progressFill,
 								{
 									width: `${Math.min((totalCalories / 2000) * 100, 100)}%`,
-									backgroundColor: totalCalories > 2000 ? "#ef4444" : "#10b981",
+									backgroundColor:
+										totalCalories > 2000 ? colors.red : totalCalories > 1600 ? colors.amber : colors.green,
 								},
 							]}
 						/>
 					</View>
 				)}
-			</Card>
+			</View>
 
 			{/* Meals List */}
 			{meals.length > 0 ? (
 				<>
-					<View style={styles.mealsHeader}>
-						<Text style={styles.mealsTitle}>Meals ({meals.length})</Text>
+					<View style={styles.mealsSection}>
+						<Text style={[styles.mealsTitle, { color: colors.text }]}>Meals Today</Text>
+						<Text style={[styles.mealsCount, { color: colors.textSecondary }]}>{meals.length} logged</Text>
 					</View>
 
 					{meals.map((meal) => (
-						<Card key={`meal-${meal.name}-${meal.time}`} style={styles.mealCard}>
-							<View style={styles.mealHeader}>
-								<View style={styles.mealInfo}>
-									<Text style={styles.mealName}>{meal.name}</Text>
-									<Text style={styles.mealTime}>{meal.time}</Text>
-								</View>
-								<Text style={styles.mealCalories}>{meal.calories} kcal</Text>
+						<View
+							key={`meal-${meal.name}-${meal.time}`}
+							style={[styles.mealCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}
+						>
+							<View style={[styles.mealIconContainer, { backgroundColor: `${colors.accent}15` }]}>
+								<MaterialIcons
+									name={meal.icon as keyof typeof MaterialIcons.glyphMap}
+									size={24}
+									color={colors.accent}
+								/>
 							</View>
-						</Card>
+							<View style={styles.mealMainContent}>
+								<View style={styles.mealTopRow}>
+									<Text style={[styles.mealName, { color: colors.text }]}>{meal.name}</Text>
+									<Text style={[styles.mealCalories, { color: colors.accent }]}>{meal.calories}</Text>
+								</View>
+								<Text style={[styles.mealTime, { color: colors.textSecondary }]}>{meal.time}</Text>
+								{(meal.protein || meal.carbs || meal.fat) && (
+									<View style={styles.mealMacros}>
+										{meal.protein && (
+											<View style={styles.macroTag}>
+												<Text style={[styles.macroTagLabel, { color: colors.textSecondary }]}>P</Text>
+												<Text style={[styles.macroTagValue, { color: colors.text }]}>{meal.protein}g</Text>
+											</View>
+										)}
+										{meal.carbs && (
+											<View style={styles.macroTag}>
+												<Text style={[styles.macroTagLabel, { color: colors.textSecondary }]}>C</Text>
+												<Text style={[styles.macroTagValue, { color: colors.text }]}>{meal.carbs}g</Text>
+											</View>
+										)}
+										{meal.fat && (
+											<View style={styles.macroTag}>
+												<Text style={[styles.macroTagLabel, { color: colors.textSecondary }]}>F</Text>
+												<Text style={[styles.macroTagValue, { color: colors.text }]}>{meal.fat}g</Text>
+											</View>
+										)}
+									</View>
+								)}
+							</View>
+							<TouchableOpacity style={[styles.mealActionButton, { borderColor: colors.border }]}>
+								<MaterialIcons name="more-vert" size={20} color={colors.textSecondary} />
+							</TouchableOpacity>
+						</View>
 					))}
 				</>
 			) : (
-				<Card style={styles.emptyCard}>
-					<Text style={styles.emptyText}>No meals logged for this day</Text>
-					<Text style={styles.emptySubtext}>Start logging your meals to see them here</Text>
-				</Card>
+				<View style={[styles.emptyCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+					<MaterialIcons name="lunch-dining" size={48} color={colors.textSecondary} />
+					<Text style={[styles.emptyText, { color: colors.text }]}>No meals logged</Text>
+					<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your first meal for this day</Text>
+				</View>
 			)}
 
 			<View style={styles.footer} />
@@ -115,6 +225,15 @@ const styles = StyleSheet.create({
 		marginTop: 60,
 		marginBottom: 24,
 	},
+	headerRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "flex-start",
+		marginBottom: 24,
+	},
+	themeToggle: {
+		padding: 8,
+	},
 	title: {
 		fontSize: 30,
 		fontWeight: "bold",
@@ -129,70 +248,94 @@ const styles = StyleSheet.create({
 	calendarContainer: {
 		marginBottom: 20,
 	},
-	selectedDateInfo: {
-		marginBottom: 20,
-		paddingHorizontal: 4,
-	},
-	selectedDateLabel: {
-		fontSize: 12,
-		color: "#4a4e69",
-		fontWeight: "600",
-		marginBottom: 6,
-	},
-	selectedDateValue: {
-		fontSize: 18,
-		color: "#22223b",
-		fontWeight: "bold",
-	},
-	summaryCard: {
-		backgroundColor: "#fff",
-		padding: 16,
-		borderRadius: 22,
-		marginBottom: 20,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
-	},
-	summaryHeader: {
+	// Date Card
+	dateCard: {
 		flexDirection: "row",
+		alignItems: "center",
+		padding: 16,
+		borderRadius: 16,
+		marginBottom: 20,
+		borderWidth: 1,
+		gap: 12,
+	},
+	dateIconContainer: {
+		width: 48,
+		height: 48,
+		borderRadius: 12,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: "rgba(59, 130, 246, 0.1)",
+	},
+	dateContent: {
+		flex: 1,
+	},
+	dateLabel: {
+		fontSize: 12,
+		fontWeight: "500",
+		marginBottom: 4,
+	},
+	dateValue: {
+		fontSize: 14,
+		fontWeight: "600",
+	},
+	dateStats: {
+		alignItems: "center",
+	},
+	statsNumber: {
+		fontSize: 18,
+		fontWeight: "bold",
+		marginBottom: 2,
+	},
+	statsLabel: {
+		fontSize: 11,
+		fontWeight: "500",
+	},
+	// Summary Card
+	summaryCard: {
+		padding: 16,
+		borderRadius: 16,
+		marginBottom: 20,
+		borderWidth: 1,
+	},
+	summaryTop: {
+		flexDirection: "row",
+		alignItems: "center",
 		justifyContent: "space-between",
-		alignItems: "flex-start",
 		marginBottom: 12,
+		gap: 8,
 	},
 	summaryLabel: {
 		fontSize: 12,
-		color: "#4a4e69",
-		fontWeight: "600",
+		fontWeight: "500",
 		marginBottom: 6,
 	},
 	summaryValue: {
-		fontSize: 28,
+		fontSize: 24,
 		fontWeight: "bold",
-		color: "#22223b",
+	},
+	summarySubtext: {
+		fontSize: 12,
+		fontWeight: "400",
+	},
+	summaryDivider: {
+		width: 1,
+		height: 40,
+		opacity: 0.2,
 	},
 	summaryBadge: {
-		backgroundColor: "#f0f9ff",
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 12,
 		alignItems: "center",
 	},
 	summaryPercent: {
 		fontSize: 16,
 		fontWeight: "bold",
-		color: "#3b82f6",
+		marginBottom: 2,
 	},
-	summaryGoal: {
-		fontSize: 10,
-		color: "#4a4e69",
+	summaryBadgeLabel: {
+		fontSize: 11,
 		fontWeight: "500",
 	},
 	progressBar: {
 		height: 8,
-		backgroundColor: "#e2e8f0",
 		borderRadius: 4,
 		overflow: "hidden",
 	},
@@ -200,72 +343,112 @@ const styles = StyleSheet.create({
 		height: "100%",
 		borderRadius: 4,
 	},
-	mealsHeader: {
+	// Meals Section
+	mealsSection: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		marginBottom: 12,
+		paddingHorizontal: 4,
 	},
 	mealsTitle: {
 		fontSize: 16,
 		fontWeight: "bold",
-		color: "#22223b",
 	},
+	mealsCount: {
+		fontSize: 12,
+		fontWeight: "500",
+	},
+	// Meal Card
 	mealCard: {
-		backgroundColor: "#fff",
+		flexDirection: "row",
+		alignItems: "center",
 		padding: 12,
-		borderRadius: 16,
+		borderRadius: 14,
 		marginBottom: 10,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.08,
-		shadowRadius: 12,
-		elevation: 4,
+		borderWidth: 1,
+		gap: 12,
 	},
-	mealHeader: {
+	mealIconContainer: {
+		width: 44,
+		height: 44,
+		borderRadius: 10,
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	mealMainContent: {
+		flex: 1,
+	},
+	mealTopRow: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-	},
-	mealInfo: {
-		flex: 1,
-	},
-	mealName: {
-		fontSize: 14,
-		fontWeight: "600",
-		color: "#22223b",
 		marginBottom: 4,
 	},
-	mealTime: {
-		fontSize: 12,
-		color: "#4a4e69",
+	mealName: {
+		fontSize: 13,
+		fontWeight: "600",
+		flex: 1,
 	},
 	mealCalories: {
 		fontSize: 14,
 		fontWeight: "bold",
-		color: "#3b82f6",
-		marginLeft: 12,
+		marginLeft: 8,
 	},
+	mealTime: {
+		fontSize: 12,
+		fontWeight: "400",
+		marginBottom: 6,
+	},
+	mealMacros: {
+		flexDirection: "row",
+		gap: 6,
+	},
+	macroTag: {
+		flexDirection: "row",
+		paddingHorizontal: 6,
+		paddingVertical: 3,
+		borderRadius: 6,
+		backgroundColor: "rgba(0, 0, 0, 0.05)",
+		alignItems: "center",
+		gap: 2,
+	},
+	macroTagLabel: {
+		fontSize: 10,
+		fontWeight: "600",
+	},
+	macroTagValue: {
+		fontSize: 10,
+		fontWeight: "500",
+	},
+	mealActionButton: {
+		width: 36,
+		height: 36,
+		borderRadius: 8,
+		justifyContent: "center",
+		alignItems: "center",
+		borderWidth: 1,
+	},
+	// Empty State
 	emptyCard: {
-		backgroundColor: "#f0f9ff",
-		padding: 24,
+		padding: 32,
 		borderRadius: 16,
 		alignItems: "center",
 		borderWidth: 1,
-		borderColor: "#bfdbfe",
 		borderStyle: "dashed",
-		shadowColor: "transparent",
-		elevation: 0,
+		marginBottom: 20,
 	},
 	emptyText: {
 		fontSize: 14,
 		fontWeight: "600",
-		color: "#22223b",
+		marginTop: 12,
 		marginBottom: 4,
 	},
 	emptySubtext: {
 		fontSize: 12,
-		color: "#4a4e69",
+		fontWeight: "400",
 	},
 	footer: {
-		height: 32,
+		height: Platform.OS === "android" ? 80 : 32,
 	},
 });

@@ -452,6 +452,6 @@ const styles = StyleSheet.create({
 		fontWeight: "700",
 	},
 	footer: {
-		height: 20,
+		height: Platform.OS === "android" ? 80 : 20,
 	},
 });
