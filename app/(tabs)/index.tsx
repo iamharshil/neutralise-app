@@ -1,108 +1,434 @@
-import CaloriesBar from "@/components/calories-bar";
-import { StyleSheet, Text, View } from "react-native";
+import { themeColors, useThemeStore } from "@/hooks/use-theme";
+import { MaterialIcons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card } from "tamagui";
 
-const mockWeekData = [
-	{ day: "Mon", calories: 2000, goal: 2000 },
-	{ day: "Tue", calories: 1890, goal: 2000 },
-	{ day: "Wed", calories: 2200, goal: 2000 },
-	{ day: "Thu", calories: 1950, goal: 2000 },
-	{ day: "Fri", calories: 2100, goal: 2000 },
-	{ day: "Sat", calories: 2300, goal: 2000 },
-	{ day: "Today", calories: 1780, goal: 2000, isToday: true },
-];
+interface Badge {
+	id: string;
+	name: string;
+	icon: string;
+	achieved: boolean;
+	color: string;
+}
 
 export default function Home() {
-	const avgCalories = Math.round(mockWeekData.reduce((sum, day) => sum + day.calories, 0) / mockWeekData.length);
+	const theme = useThemeStore((state) => state.theme);
+	const colors = themeColors[theme];
+	const insets = useSafeAreaInsets();
+
+	const currentCalories = 1250;
+	const goalCalories = 2000;
+	const caloriePercentage = (currentCalories / goalCalories) * 100;
+
+	const streak = 12;
+	const macros = {
+		protein: { current: 45, goal: 150, unit: "g" },
+		carbs: { current: 120, goal: 250, unit: "g" },
+		fat: { current: 35, goal: 65, unit: "g" },
+	};
+
+	const badges: Badge[] = [
+		{ id: "1", name: "7-Day Streak", icon: "local-fire-department", achieved: true, color: colors.red },
+		{ id: "2", name: "Perfect Day", icon: "check-circle", achieved: true, color: colors.green },
+		{ id: "3", name: "Consistent", icon: "trending-up", achieved: true, color: colors.blue },
+		{ id: "4", name: "Century Club", icon: "emoji-events", achieved: false, color: colors.amber },
+		{ id: "5", name: "Macro Master", icon: "restaurant", achieved: false, color: colors.purple },
+		{ id: "6", name: "Beast Mode", icon: "psychology", achieved: false, color: colors.accent },
+	];
+
+	const dynamicStyles = {
+		container: { ...styles.container, backgroundColor: colors.bg, paddingTop: insets.top + 12 },
+		header: styles.header,
+		greeting: { ...styles.greeting, color: colors.text },
+		date: { ...styles.date, color: colors.textSecondary },
+		ringBackground: { ...styles.ringBackground, backgroundColor: colors.bgSecondary },
+		ringCenter: styles.ringCenter,
+		calorieValue: { ...styles.calorieValue, color: colors.text },
+		calorieLabel: { ...styles.calorieLabel, color: colors.textSecondary },
+		calorieGoal: { ...styles.calorieGoal, color: colors.textTertiary },
+		streakBadge: { ...styles.streakBadge, backgroundColor: colors.bgSecondary, borderColor: colors.border },
+		streakCount: { ...styles.streakCount, color: colors.text },
+		streakLabel: { ...styles.streakLabel, color: colors.textSecondary },
+		sectionTitle: { ...styles.sectionTitle, color: colors.text },
+		macroCard: { ...styles.macroCard, backgroundColor: colors.bgSecondary, borderColor: colors.border },
+		macroName: { ...styles.macroName, color: colors.textSecondary },
+		macroAmount: { ...styles.macroAmount, color: colors.text },
+		macroBar: { ...styles.macroBar, backgroundColor: colors.bgTertiary },
+		macroGoal: { ...styles.macroGoal, color: colors.textTertiary },
+		badge: { ...styles.badge, backgroundColor: colors.bgSecondary, borderColor: colors.border },
+		badgeName: { ...styles.badgeName, color: colors.text },
+		badgeNameInactive: { color: colors.textSecondary },
+		statCard: { ...styles.statCard, backgroundColor: colors.bgSecondary, borderColor: colors.border },
+		statLabel: { ...styles.statLabel, color: colors.textSecondary },
+		statValue: { ...styles.statValue, color: colors.text },
+		achievementCount: { ...styles.achievementCount, color: colors.accent },
+	};
 
 	return (
-		<View style={styles.container}>
-			<View>
-				<Text style={styles.title}>Your Week</Text>
-				<Text style={styles.subtitle}>
-					You averaged
-					<Text style={styles.subAvg}> {avgCalories.toLocaleString()} kcal/day</Text> this week
+		<ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
+			{/* Header */}
+			<View style={dynamicStyles.header}>
+				<Text style={dynamicStyles.greeting}>Today's Progress</Text>
+				<Text style={dynamicStyles.date}>
+					{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
 				</Text>
 			</View>
 
-			<Card style={styles.CaloriesCard}>
-				{mockWeekData.map((data) => (
-					<CaloriesBar key={data.day} day={data.day} calories={data.calories} goal={data.goal} isToday={data.isToday} />
-				))}
-			</Card>
+			{/* Main Calorie Ring */}
+			<View style={styles.calorieRingSection}>
+				<View style={styles.calorieRing}>
+					<View style={dynamicStyles.ringBackground}>
+						<View
+							style={[
+								styles.ringProgress,
+								{
+									width: `${Math.min(caloriePercentage, 100)}%`,
+									backgroundColor:
+										caloriePercentage > 100 ? colors.red : caloriePercentage > 80 ? colors.amber : colors.green,
+								},
+							]}
+						/>
+					</View>
+					<View style={dynamicStyles.ringCenter}>
+						<Text style={dynamicStyles.calorieValue}>{currentCalories}</Text>
+						<Text style={dynamicStyles.calorieLabel}>kcal</Text>
+						<Text style={dynamicStyles.calorieGoal}>/ {goalCalories}</Text>
+					</View>
+				</View>
+				<View style={dynamicStyles.streakBadge}>
+					<MaterialIcons name="local-fire-department" size={20} color={colors.red} />
+					<Text style={dynamicStyles.streakCount}>{streak} Day</Text>
+					<Text style={dynamicStyles.streakLabel}>Streak</Text>
+				</View>
+			</View>
 
-			<Card style={styles.card}>
-				<Text style={styles.cardTitle}>Today's Calories</Text>
-				<Text style={styles.calories}>1,250 / 2,000</Text>
-			</Card>
-		</View>
+			{/* Macros Grid */}
+			<View style={styles.macrosSection}>
+				<Text style={dynamicStyles.sectionTitle}>Macronutrients</Text>
+				<View style={styles.macrosGrid}>
+					{/* Protein */}
+					<Card style={dynamicStyles.macroCard}>
+						<View style={[styles.macroIcon, { backgroundColor: `${colors.red}15` }]}>
+							<MaterialIcons name="egg" size={24} color={colors.red} />
+						</View>
+						<Text style={dynamicStyles.macroName}>Protein</Text>
+						<Text style={dynamicStyles.macroAmount}>{macros.protein.current}g</Text>
+						<View style={dynamicStyles.macroBar}>
+							<View
+								style={[
+									styles.macroFill,
+									{
+										width: `${Math.min((macros.protein.current / macros.protein.goal) * 100, 100)}%`,
+										backgroundColor: colors.red,
+									},
+								]}
+							/>
+						</View>
+						<Text style={dynamicStyles.macroGoal}>Goal: {macros.protein.goal}g</Text>
+					</Card>
+
+					{/* Carbs */}
+					<Card style={dynamicStyles.macroCard}>
+						<View style={[styles.macroIcon, { backgroundColor: `${colors.blue}15` }]}>
+							<MaterialIcons name="grain" size={24} color={colors.blue} />
+						</View>
+						<Text style={dynamicStyles.macroName}>Carbs</Text>
+						<Text style={dynamicStyles.macroAmount}>{macros.carbs.current}g</Text>
+						<View style={dynamicStyles.macroBar}>
+							<View
+								style={[
+									styles.macroFill,
+									{
+										width: `${Math.min((macros.carbs.current / macros.carbs.goal) * 100, 100)}%`,
+										backgroundColor: colors.blue,
+									},
+								]}
+							/>
+						</View>
+						<Text style={dynamicStyles.macroGoal}>Goal: {macros.carbs.goal}g</Text>
+					</Card>
+
+					{/* Fat */}
+					<Card style={dynamicStyles.macroCard}>
+						<View style={[styles.macroIcon, { backgroundColor: `${colors.amber}15` }]}>
+							<MaterialIcons name="local-dining" size={24} color={colors.amber} />
+						</View>
+						<Text style={dynamicStyles.macroName}>Fat</Text>
+						<Text style={dynamicStyles.macroAmount}>{macros.fat.current}g</Text>
+						<View style={dynamicStyles.macroBar}>
+							<View
+								style={[
+									styles.macroFill,
+									{
+										width: `${Math.min((macros.fat.current / macros.fat.goal) * 100, 100)}%`,
+										backgroundColor: colors.amber,
+									},
+								]}
+							/>
+						</View>
+						<Text style={dynamicStyles.macroGoal}>Goal: {macros.fat.goal}g</Text>
+					</Card>
+				</View>
+			</View>
+
+			{/* Achievements */}
+			<View style={styles.achievementsSection}>
+				<View style={styles.achievementsHeader}>
+					<Text style={dynamicStyles.sectionTitle}>Achievements</Text>
+					<Text style={dynamicStyles.achievementCount}>
+						{badges.filter((b) => b.achieved).length} / {badges.length}
+					</Text>
+				</View>
+				<View style={styles.badgesGrid}>
+					{badges.map((badge) => (
+						<TouchableOpacity key={badge.id} style={[dynamicStyles.badge, !badge.achieved && styles.badgeInactive]}>
+							<View
+								style={[
+									styles.badgeIcon,
+									{ backgroundColor: badge.achieved ? `${badge.color}15` : `${colors.textSecondary}08` },
+								]}
+							>
+								<MaterialIcons
+									name={badge.icon as keyof typeof MaterialIcons.glyphMap}
+									size={24}
+									color={badge.achieved ? badge.color : colors.textSecondary}
+								/>
+							</View>
+							<Text style={[dynamicStyles.badgeName, !badge.achieved && dynamicStyles.badgeNameInactive]}>
+								{badge.name}
+							</Text>
+						</TouchableOpacity>
+					))}
+				</View>
+			</View>
+
+			{/* Quick Stats */}
+			<View style={styles.statsSection}>
+				<Card style={dynamicStyles.statCard}>
+					<View style={styles.statItem}>
+						<MaterialIcons name="calendar-today" size={20} color={colors.accent} />
+						<View style={styles.statInfo}>
+							<Text style={dynamicStyles.statLabel}>This Week</Text>
+							<Text style={dynamicStyles.statValue}>14,220 kcal</Text>
+						</View>
+					</View>
+				</Card>
+				<Card style={dynamicStyles.statCard}>
+					<View style={styles.statItem}>
+						<MaterialIcons name="trending-up" size={20} color={colors.green} />
+						<View style={styles.statInfo}>
+							<Text style={dynamicStyles.statLabel}>Average</Text>
+							<Text style={dynamicStyles.statValue}>2,031 kcal</Text>
+						</View>
+					</View>
+				</Card>
+			</View>
+
+			<View style={styles.footer} />
+		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		padding: 20,
-		backgroundColor: "#f8fafc",
-		justifyContent: "flex-start",
+		paddingHorizontal: 16,
 	},
-	title: {
-		fontSize: 30,
-		fontWeight: "bold",
-		textAlign: "left",
-		marginTop: 60,
-		marginBottom: 10,
-		color: "#22223b",
-		letterSpacing: 0.5,
+	header: {
+		marginBottom: 24,
+		paddingTop: 8,
 	},
-	subtitle: {
+	greeting: {
+		fontSize: 28,
+		fontWeight: "700",
+		letterSpacing: -0.5,
+	},
+	date: {
 		fontSize: 14,
-		color: "#4a4e69",
-		textAlign: "left",
-		marginBottom: 17,
+		marginTop: 4,
 	},
-	subAvg: {
-		fontWeight: "bold",
-		color: "#3b82f6",
-	},
-	CaloriesCard: {
+	// Calorie Ring Section
+	calorieRingSection: {
 		flexDirection: "row",
-		padding: 10,
-		paddingTop: 28,
-		marginBottom: 22,
-		backgroundColor: "#fff",
-		borderRadius: 22,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
-	},
-	card: {
-		backgroundColor: "#fff",
-		padding: 10,
-		borderRadius: 22,
 		alignItems: "center",
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
+		marginBottom: 32,
+		gap: 16,
+	},
+	calorieRing: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		height: 200,
+	},
+	ringBackground: {
+		width: "100%",
+		height: 12,
+		borderRadius: 6,
+		overflow: "hidden",
+		marginBottom: 16,
+	},
+	ringProgress: {
+		height: "100%",
+		borderRadius: 6,
+	},
+	ringCenter: {
+		alignItems: "center",
+	},
+	calorieValue: {
+		fontSize: 32,
+		fontWeight: "700",
+		letterSpacing: -0.5,
+	},
+	calorieLabel: {
+		fontSize: 12,
+		marginTop: 2,
+	},
+	calorieGoal: {
+		fontSize: 12,
+		marginTop: 1,
+	},
+	streakBadge: {
+		borderRadius: 12,
+		padding: 12,
+		borderWidth: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		minWidth: 80,
+	},
+	streakCount: {
+		fontSize: 14,
+		fontWeight: "700",
+		marginTop: 6,
+	},
+	streakLabel: {
+		fontSize: 11,
+		marginTop: 2,
+	},
+	// Macros Section
+	macrosSection: {
 		marginBottom: 32,
 	},
-	cardTitle: {
+	sectionTitle: {
 		fontSize: 18,
-		color: "#4a4e69",
+		fontWeight: "700",
+		marginBottom: 12,
+		letterSpacing: -0.3,
+	},
+	macrosGrid: {
+		gap: 12,
+	},
+	macroCard: {
+		borderWidth: 1,
+		borderRadius: 12,
+		padding: 16,
+		paddingVertical: 14,
+	},
+	macroIcon: {
+		width: 40,
+		height: 40,
+		borderRadius: 8,
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 10,
+	},
+	macroName: {
+		fontSize: 13,
+		fontWeight: "600",
+		textTransform: "uppercase",
+		letterSpacing: 0.5,
+	},
+	macroAmount: {
+		fontSize: 20,
+		fontWeight: "700",
+		marginTop: 4,
+		marginBottom: 10,
+	},
+	macroBar: {
+		height: 6,
+		borderRadius: 3,
+		overflow: "hidden",
 		marginBottom: 8,
+	},
+	macroFill: {
+		height: "100%",
+		borderRadius: 3,
+	},
+	macroGoal: {
+		fontSize: 11,
+	},
+	// Achievements Section
+	achievementsSection: {
+		marginBottom: 32,
+	},
+	achievementsHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: 12,
+	},
+	achievementCount: {
+		fontSize: 14,
 		fontWeight: "600",
 	},
-	calories: {
-		fontSize: 38,
-		fontWeight: "bold",
-		color: "#3b82f6",
-		marginTop: 10,
-		letterSpacing: 1,
+	badgesGrid: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: 12,
+	},
+	badge: {
+		flex: 1,
+		minWidth: "30%",
+		borderWidth: 1,
+		borderRadius: 12,
+		padding: 12,
+		alignItems: "center",
+	},
+	badgeInactive: {
+		opacity: 0.5,
+	},
+	badgeIcon: {
+		width: 44,
+		height: 44,
+		borderRadius: 10,
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 8,
+	},
+	badgeName: {
+		fontSize: 11,
+		fontWeight: "600",
+		textAlign: "center",
+	},
+	badgeNameInactive: {},
+	// Stats Section
+	statsSection: {
+		gap: 10,
+		marginBottom: 20,
+	},
+	statCard: {
+		borderWidth: 1,
+		borderRadius: 12,
+		padding: 16,
+		paddingVertical: 14,
+	},
+	statItem: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+	},
+	statInfo: {
+		flex: 1,
+	},
+	statLabel: {
+		fontSize: 12,
+		marginBottom: 2,
+	},
+	statValue: {
+		fontSize: 16,
+		fontWeight: "700",
+	},
+	footer: {
+		height: 20,
 	},
 });

@@ -1,41 +1,68 @@
-import { useAuthStore } from "@/hooks/use-auth";
+import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Redirect, Tabs } from "expo-router";
-import { useEffect, useState } from "react";
+import { Tabs } from "expo-router";
 
 export default function TabLayout() {
-	const token = useAuthStore((s) => s.token);
-	const [hydrated, setHydrated] = useState(false);
-
-	useEffect(() => {
-		// Wait until Zustand has restored state from AsyncStorage
-		const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-		setHydrated(useAuthStore.persist.hasHydrated()); // handle case where it’s already done
-		return () => unsub();
-	}, []);
-
-	if (!hydrated) {
-		return null; // could also show <SplashScreen />
-	}
-
-	if (!token) {
-		return <Redirect href="/(auth)/login" />;
-	}
+	const theme = useThemeStore((state) => state.theme);
+	const colors = themeColors[theme];
 
 	return (
-		<Tabs screenOptions={{ headerShown: false, tabBarShowLabel: false }}>
+		<Tabs
+			screenOptions={{
+				headerShown: false,
+				tabBarShowLabel: false,
+				tabBarStyle: {
+					backgroundColor: colors.bgSecondary,
+					borderTopColor: colors.border,
+					borderTopWidth: 1,
+				},
+				tabBarActiveTintColor: colors.accent,
+				tabBarInactiveTintColor: colors.textSecondary,
+			}}
+		>
 			<Tabs.Screen
 				name="index"
 				options={{
 					title: "Home",
-					tabBarIcon: ({ focused }) => <MaterialIcons name="home" size={28} color={focused ? "#007AFF" : "#000"} />,
+					tabBarIcon: ({ focused }) => (
+						<MaterialIcons name="home" size={28} color={focused ? colors.accent : colors.textSecondary} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="calendar"
+				options={{
+					title: "Calendar",
+					tabBarIcon: ({ focused }) => (
+						<MaterialIcons name="calendar-month" size={28} color={focused ? colors.accent : colors.textSecondary} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="create"
+				options={{
+					title: "Create",
+					tabBarIcon: ({ focused }) => (
+						<MaterialIcons name="add-circle" size={28} color={focused ? colors.accent : colors.textSecondary} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="insights"
+				options={{
+					title: "Insights",
+					tabBarIcon: ({ focused }) => (
+						<MaterialIcons name="insights" size={28} color={focused ? colors.accent : colors.textSecondary} />
+					),
 				}}
 			/>
 			<Tabs.Screen
 				name="settings"
 				options={{
 					title: "Settings",
-					tabBarIcon: ({ focused }) => <MaterialIcons name="settings" size={28} color={focused ? "#007AFF" : "#000"} />,
+					tabBarIcon: ({ focused }) => (
+						<MaterialIcons name="settings" size={28} color={focused ? colors.accent : colors.textSecondary} />
+					),
 				}}
 			/>
 		</Tabs>
