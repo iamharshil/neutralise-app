@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CalendarScreen() {
 	const theme = useThemeStore((state) => state.theme);
-	const toggleTheme = useThemeStore((state) => state.toggleTheme);
 	const colors = themeColors[theme];
 	const insets = useSafeAreaInsets();
 	const [selectedDate, setSelectedDate] = useState(new Date());
@@ -78,9 +77,6 @@ export default function CalendarScreen() {
 					<Text style={dynamicStyles.title}>Calendar</Text>
 					<Text style={dynamicStyles.subtitle}>Track your meals</Text>
 				</View>
-				<TouchableOpacity onPress={toggleTheme} style={styles.themeToggle}>
-					<MaterialIcons name={theme === "dark" ? "light-mode" : "dark-mode"} size={24} color={colors.accent} />
-				</TouchableOpacity>
 			</View>
 
 			<View style={styles.calendarContainer}>

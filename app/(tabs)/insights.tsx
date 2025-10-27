@@ -19,11 +19,18 @@ interface MacroBreakdown {
 	percentage: number;
 }
 
+interface TopUser {
+	rank: number;
+	name: string;
+	calories: number;
+	streak: number;
+	avatar?: string;
+}
+
 type TimeRange = "week" | "month" | "year";
 
 export default function Insights() {
 	const theme = useThemeStore((state) => state.theme);
-	const toggleTheme = useThemeStore((state) => state.toggleTheme);
 	const colors = themeColors[theme];
 	const insets = useSafeAreaInsets();
 	const [timeRange, setTimeRange] = useState<TimeRange>("week");
@@ -82,36 +89,41 @@ export default function Insights() {
 		{ week: "Week 4", avg: 2100, goal: 2000 },
 	];
 
-	const dynamicStyles = {
-		container: { ...styles.container, backgroundColor: colors.bg, paddingTop: insets.top + 12 },
-		header: styles.header,
-		title: { ...styles.title, color: colors.text },
-		subtitle: { ...styles.subtitle, color: colors.textSecondary },
-		insightCard: { backgroundColor: colors.bgSecondary, borderColor: colors.border },
-		insightLabel: { color: colors.textSecondary },
-		insightValue: { color: colors.text },
-		insightChange: { color: colors.textSecondary },
-		timeRangeButton: { borderColor: colors.border },
-		timeRangeButtonActive: { backgroundColor: colors.accent, borderColor: colors.accent },
-		timeRangeButtonText: { color: colors.text },
-		timeRangeButtonTextActive: { color: "#fff" },
-		chartBar: { backgroundColor: colors.bgTertiary },
-		macroCard: { backgroundColor: colors.bgSecondary, borderColor: colors.border },
-		macroLabel: { color: colors.textSecondary },
-		macroValue: { color: colors.text },
-		sectionTitle: { color: colors.text },
+	const topUsers: { today: TopUser[]; week: TopUser[]; month: TopUser[] } = {
+		today: [
+			{ rank: 1, name: "Alex Chen", calories: 2100, streak: 45 },
+			{ rank: 2, name: "Jordan Blake", calories: 2050, streak: 32 },
+			{ rank: 3, name: "Sam Torres", calories: 1980, streak: 28 },
+			{ rank: 4, name: "Morgan Lee", calories: 1950, streak: 25 },
+			{ rank: 5, name: "Casey Kim", calories: 1920, streak: 22 },
+		],
+		week: [
+			{ rank: 1, name: "Taylor Swift", calories: 14500, streak: 7 },
+			{ rank: 2, name: "Jordan Blake", calories: 14200, streak: 7 },
+			{ rank: 3, name: "Alex Chen", calories: 13900, streak: 6 },
+			{ rank: 4, name: "Morgan Lee", calories: 13700, streak: 6 },
+			{ rank: 5, name: "Casey Kim", calories: 13400, streak: 5 },
+		],
+		month: [
+			{ rank: 1, name: "Alex Chen", calories: 58200, streak: 45 },
+			{ rank: 2, name: "Taylor Swift", calories: 57800, streak: 28 },
+			{ rank: 3, name: "Jordan Blake", calories: 57200, streak: 32 },
+			{ rank: 4, name: "Morgan Lee", calories: 56500, streak: 25 },
+			{ rank: 5, name: "Casey Kim", calories: 55900, streak: 22 },
+		],
 	};
 
 	return (
-		<ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
+		<ScrollView
+			style={[styles.container, { backgroundColor: colors.bg, paddingTop: insets.top + 12 }]}
+			showsVerticalScrollIndicator={false}
+		>
+			{/* Header */}
 			<View style={styles.headerRow}>
 				<View>
-					<Text style={dynamicStyles.title}>Insights</Text>
-					<Text style={dynamicStyles.subtitle}>Your nutrition analytics</Text>
+					<Text style={[styles.title, { color: colors.text }]}>Insights</Text>
+					<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your nutrition analytics</Text>
 				</View>
-				<TouchableOpacity onPress={toggleTheme} style={styles.themeToggle}>
-					<MaterialIcons name={theme === "dark" ? "light-mode" : "dark-mode"} size={24} color={colors.accent} />
-				</TouchableOpacity>
 			</View>
 
 			{/* Time Range Selector */}
@@ -119,40 +131,38 @@ export default function Insights() {
 				{(["week", "month", "year"] as const).map((range) => (
 					<TouchableOpacity
 						key={range}
-						style={[styles.timeRangeButton, timeRange === range && styles.timeRangeButtonActive]}
+						style={[
+							styles.timeRangeButton,
+							{ borderColor: colors.border },
+							timeRange === range && { backgroundColor: colors.accent, borderColor: colors.accent },
+						]}
 						onPress={() => setTimeRange(range)}
 					>
-						<Text style={[styles.timeRangeButtonText, timeRange === range && styles.timeRangeButtonTextActive]}>
+						<Text style={[styles.timeRangeButtonText, { color: timeRange === range ? "#fff" : colors.textSecondary }]}>
 							{range === "week" ? "Week" : range === "month" ? "Month" : "Year"}
 						</Text>
 					</TouchableOpacity>
 				))}
 			</View>
 
-			{/* Key Metrics */}
+			{/* Key Metrics Grid */}
 			<View style={styles.insightsGrid}>
 				{insights.map((insight) => (
 					<View
 						key={`insight-${insight.label}`}
 						style={[styles.insightCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}
 					>
-						<View style={styles.insightIconContainer}>
+						<View style={[styles.insightIconContainer, { backgroundColor: `${colors.accent}15` }]}>
 							<MaterialIcons
 								name={insight.icon as keyof typeof MaterialIcons.glyphMap}
-								size={20}
+								size={24}
 								color={colors.accent}
 							/>
 						</View>
 						<Text style={[styles.insightLabel, { color: colors.textSecondary }]}>{insight.label}</Text>
 						<Text style={[styles.insightValue, { color: colors.text }]}>{insight.value}</Text>
-						<Text
-							style={[
-								styles.insightChange,
-								insight.isPositive ? styles.positive : styles.negative,
-								{ color: insight.isPositive ? colors.green : colors.red },
-							]}
-						>
-							{insight.change}
+						<Text style={[styles.insightChange, { color: insight.isPositive ? colors.green : colors.amber }]}>
+							{insight.isPositive ? "↑" : "↔"} {insight.change}
 						</Text>
 					</View>
 				))}
@@ -160,24 +170,29 @@ export default function Insights() {
 
 			{/* Macro Breakdown */}
 			<View style={[styles.macroCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-				<Text style={[styles.cardTitle, { color: colors.text }]}>Today's Macro Breakdown</Text>
+				<View style={styles.cardHeader}>
+					<MaterialIcons name="pie-chart" size={20} color={colors.accent} />
+					<Text style={[styles.cardTitle, { color: colors.text }]}>Today's Macro Breakdown</Text>
+				</View>
+
 				<View style={styles.macroContainer}>
+					{/* Macro List */}
 					<View style={styles.macroList}>
 						{macroBreakdown.map((macro) => (
-							<View key={macro.label} style={styles.macroRow}>
+							<View key={macro.label} style={[styles.macroRow, { borderBottomColor: colors.border }]}>
 								<View style={styles.macroLabelContainer}>
 									<View style={[styles.macroColorDot, { backgroundColor: macro.color }]} />
 									<View>
-										<Text style={styles.macroLabel}>{macro.label}</Text>
-										<Text style={styles.macroValue}>{macro.value}g</Text>
+										<Text style={[styles.macroLabel, { color: colors.textSecondary }]}>{macro.label}</Text>
+										<Text style={[styles.macroValue, { color: colors.text }]}>{macro.value}g</Text>
 									</View>
 								</View>
-								<View style={styles.macroPercentageContainer}>
-									<Text style={styles.macroPercentage}>{macro.percentage}%</Text>
-								</View>
+								<Text style={[styles.macroPercentage, { color: colors.accent }]}>{macro.percentage}%</Text>
 							</View>
 						))}
 					</View>
+
+					{/* Macro Progress Bar */}
 					<View style={styles.macroChart}>
 						{macroBreakdown.map((macro, barIndex) => (
 							<View
@@ -199,19 +214,24 @@ export default function Insights() {
 				</View>
 			</View>
 
-			{/* Weekly Trend */}
+			{/* Weekly Trend Chart */}
 			<View style={[styles.trendCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-				<Text style={styles.cardTitle}>Weekly Trend</Text>
+				<View style={styles.cardHeader}>
+					<MaterialIcons name="show-chart" size={20} color={colors.accent} />
+					<Text style={[styles.cardTitle, { color: colors.text }]}>Weekly Trend</Text>
+				</View>
+
 				<View style={styles.trendData}>
 					{weeklyData.map((item) => (
 						<View key={item.day} style={styles.trendItem}>
-							<View style={styles.trendBarContainer}>
+							<View style={[styles.trendBarContainer, { backgroundColor: colors.bgTertiary }]}>
 								<View
 									style={[
 										styles.trendBar,
 										{
 											height: `${Math.min((item.percentage / 115) * 100, 100)}%`,
-											backgroundColor: item.percentage > 105 ? "#ef4444" : item.percentage < 85 ? "#f59e0b" : "#10b981",
+											backgroundColor:
+												item.percentage > 105 ? colors.red : item.percentage < 85 ? colors.amber : colors.green,
 										},
 									]}
 								/>
@@ -223,10 +243,14 @@ export default function Insights() {
 				</View>
 			</View>
 
-			{/* Monthly Stats */}
+			{/* Monthly Stats - Show on Month selection */}
 			{timeRange === "month" && (
 				<View style={[styles.statsCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-					<Text style={[styles.cardTitle, { color: colors.text }]}>Monthly Breakdown</Text>
+					<View style={styles.cardHeader}>
+						<MaterialIcons name="calendar-month" size={20} color={colors.accent} />
+						<Text style={[styles.cardTitle, { color: colors.text }]}>Monthly Breakdown</Text>
+					</View>
+
 					{monthlyStats.map((stat) => (
 						<View key={`month-${stat.week}`} style={styles.statRow}>
 							<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.week}</Text>
@@ -235,24 +259,75 @@ export default function Insights() {
 									style={[styles.statBar, { width: `${(stat.avg / 2200) * 100}%`, backgroundColor: colors.accent }]}
 								/>
 							</View>
-							<Text style={[styles.statValue, { color: colors.text }]}>{stat.avg} cal</Text>
+							<Text style={[styles.statValue, { color: colors.text }]}>{stat.avg}</Text>
 						</View>
 					))}
 				</View>
 			)}
 
-			{/* Summary */}
-			<View style={[styles.summaryCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+			{/* Summary Card */}
+			<View style={[styles.summaryCard, { backgroundColor: `${colors.accent}15`, borderColor: colors.accent }]}>
 				<View style={styles.summaryRow}>
-					<View>
-						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Total Calories This Week</Text>
-						<Text style={[styles.summaryValue, { color: colors.text }]}>14,220</Text>
+					<View style={styles.summaryItem}>
+						<MaterialIcons name="whatshot" size={20} color={colors.accent} />
+						<View style={{ marginLeft: 12, flex: 1 }}>
+							<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Total Calories</Text>
+							<Text style={[styles.summaryValue, { color: colors.text }]}>14,220 kcal</Text>
+						</View>
 					</View>
 					<View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
-					<View>
-						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Weekly Average</Text>
-						<Text style={[styles.summaryValue, { color: colors.text }]}>2,031</Text>
+					<View style={styles.summaryItem}>
+						<MaterialIcons name="trending-up" size={20} color={colors.accent} />
+						<View style={{ marginLeft: 12, flex: 1 }}>
+							<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Weekly Avg</Text>
+							<Text style={[styles.summaryValue, { color: colors.text }]}>2,031 kcal</Text>
+						</View>
 					</View>
+				</View>
+			</View>
+
+			{/* Top 25 Users Leaderboard */}
+			<View style={[styles.leaderboardCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+				<View style={styles.cardHeader}>
+					<MaterialIcons name="leaderboard" size={20} color={colors.accent} />
+					<Text style={[styles.cardTitle, { color: colors.text }]}>
+						{timeRange === "week" ? "Top 5 This Week" : timeRange === "month" ? "Top 5 This Month" : "Top 5 Today"}
+					</Text>
+				</View>
+
+				<View style={styles.leaderboardList}>
+					{(timeRange === "week" ? topUsers.week : timeRange === "month" ? topUsers.month : topUsers.today).map(
+						(user, index) => (
+							<View key={`user-${user.rank}`} style={[styles.leaderboardRow, { borderBottomColor: colors.border }]}>
+								<View style={styles.rankBadge}>
+									{index === 0 ? (
+										<MaterialIcons name="emoji-events" size={20} color="#FFD700" />
+									) : index === 1 ? (
+										<MaterialIcons name="emoji-events" size={20} color="#C0C0C0" />
+									) : index === 2 ? (
+										<MaterialIcons name="emoji-events" size={20} color="#CD7F32" />
+									) : (
+										<Text style={[styles.rankText, { color: colors.textSecondary }]}>#{user.rank}</Text>
+									)}
+								</View>
+
+								<View style={styles.userInfo}>
+									<Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
+										{user.name}
+									</Text>
+									<View style={styles.userStats}>
+										<MaterialIcons name="local-fire-department" size={12} color={colors.red} />
+										<Text style={[styles.streakText, { color: colors.textSecondary }]}>{user.streak} day streak</Text>
+									</View>
+								</View>
+
+								<View style={styles.calorieInfo}>
+									<Text style={[styles.calorieValue, { color: colors.accent }]}>{user.calories.toLocaleString()}</Text>
+									<Text style={[styles.calorieLabel, { color: colors.textSecondary }]}>kcal</Text>
+								</View>
+							</View>
+						),
+					)}
 				</View>
 			</View>
 
@@ -264,12 +339,7 @@ export default function Insights() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		padding: 20,
-		backgroundColor: "#f8fafc",
-	},
-	header: {
-		marginTop: 60,
-		marginBottom: 24,
+		padding: 16,
 	},
 	headerRow: {
 		flexDirection: "row",
@@ -283,13 +353,11 @@ const styles = StyleSheet.create({
 	title: {
 		fontSize: 30,
 		fontWeight: "bold",
-		color: "#22223b",
 		marginBottom: 8,
 		letterSpacing: 0.5,
 	},
 	subtitle: {
 		fontSize: 14,
-		color: "#4a4e69",
 	},
 	timeRangeContainer: {
 		flexDirection: "row",
@@ -298,83 +366,73 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 	timeRangeButton: {
-		paddingHorizontal: 16,
+		paddingHorizontal: 14,
 		paddingVertical: 8,
 		borderRadius: 20,
-		backgroundColor: "#e2e8f0",
-	},
-	timeRangeButtonActive: {
-		backgroundColor: "#3b82f6",
+		borderWidth: 1.5,
 	},
 	timeRangeButtonText: {
 		fontSize: 12,
 		fontWeight: "600",
-		color: "#4a4e69",
-	},
-	timeRangeButtonTextActive: {
-		color: "#fff",
 	},
 	insightsGrid: {
 		flexDirection: "row",
 		flexWrap: "wrap",
 		justifyContent: "space-between",
 		marginBottom: 20,
+		gap: 10,
 	},
 	insightCard: {
 		width: "48%",
-		backgroundColor: "#fff",
 		padding: 14,
-		borderRadius: 16,
-		marginBottom: 12,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.08,
-		shadowRadius: 12,
-		elevation: 4,
+		borderRadius: 14,
+		borderWidth: 1,
 	},
 	insightIconContainer: {
-		marginBottom: 8,
+		width: 40,
+		height: 40,
+		borderRadius: 10,
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 10,
 	},
 	insightLabel: {
-		fontSize: 12,
-		color: "#4a4e69",
+		fontSize: 11,
 		fontWeight: "600",
 		marginBottom: 6,
 	},
 	insightValue: {
-		fontSize: 18,
+		fontSize: 16,
 		fontWeight: "bold",
-		color: "#22223b",
 		marginBottom: 4,
 	},
 	insightChange: {
-		fontSize: 11,
+		fontSize: 10,
 		fontWeight: "500",
 	},
-	positive: {
-		color: "#10b981",
+	// Card Header with icon
+	cardHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 16,
+		gap: 10,
 	},
-	negative: {
-		color: "#f59e0b",
+	cardTitle: {
+		fontSize: 16,
+		fontWeight: "bold",
 	},
+	// Macro Card
 	macroCard: {
-		backgroundColor: "#fff",
 		padding: 16,
-		borderRadius: 22,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
+		borderRadius: 16,
+		borderWidth: 1,
 		marginBottom: 20,
 	},
 	macroContainer: {
-		marginTop: 16,
+		marginTop: 12,
 	},
 	macroList: {
-		marginBottom: 16,
+		marginBottom: 14,
 	},
 	macroRow: {
 		flexDirection: "row",
@@ -382,39 +440,30 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		paddingVertical: 10,
 		borderBottomWidth: 1,
-		borderBottomColor: "#e2e8f0",
 	},
 	macroLabelContainer: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 12,
+		gap: 10,
+		flex: 1,
 	},
 	macroColorDot: {
-		width: 12,
-		height: 12,
-		borderRadius: 6,
+		width: 10,
+		height: 10,
+		borderRadius: 5,
 	},
 	macroLabel: {
-		fontSize: 12,
-		color: "#4a4e69",
+		fontSize: 11,
 		fontWeight: "600",
+		marginBottom: 2,
 	},
 	macroValue: {
-		fontSize: 14,
-		color: "#22223b",
+		fontSize: 13,
 		fontWeight: "bold",
-		marginTop: 2,
-	},
-	macroPercentageContainer: {
-		backgroundColor: "#f1f5f9",
-		paddingHorizontal: 12,
-		paddingVertical: 4,
-		borderRadius: 8,
 	},
 	macroPercentage: {
 		fontSize: 12,
 		fontWeight: "bold",
-		color: "#3b82f6",
 	},
 	macroChart: {
 		flexDirection: "row",
@@ -426,30 +475,19 @@ const styles = StyleSheet.create({
 	macroBar: {
 		minWidth: 4,
 	},
+	// Trend Card
 	trendCard: {
-		backgroundColor: "#fff",
 		padding: 16,
-		borderRadius: 22,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
+		borderRadius: 16,
+		borderWidth: 1,
 		marginBottom: 20,
-	},
-	cardTitle: {
-		fontSize: 16,
-		fontWeight: "bold",
-		color: "#22223b",
-		marginBottom: 16,
 	},
 	trendData: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "flex-end",
 		height: 180,
-		gap: 8,
+		gap: 6,
 	},
 	trendItem: {
 		alignItems: "center",
@@ -459,7 +497,6 @@ const styles = StyleSheet.create({
 	trendBarContainer: {
 		width: "100%",
 		height: 120,
-		backgroundColor: "#f1f5f9",
 		borderRadius: 6,
 		justifyContent: "flex-end",
 		alignItems: "center",
@@ -470,65 +507,53 @@ const styles = StyleSheet.create({
 		borderRadius: 4,
 	},
 	trendDay: {
-		fontSize: 11,
-		color: "#4a4e69",
+		fontSize: 10,
 		fontWeight: "600",
 		marginBottom: 4,
 	},
 	trendValue: {
 		fontSize: 10,
-		color: "#22223b",
 		fontWeight: "bold",
 	},
+	// Stats Card
 	statsCard: {
-		backgroundColor: "#fff",
 		padding: 16,
-		borderRadius: 22,
-		borderWidth: 0,
-		shadowColor: "#3b82f6",
-		shadowOffset: { width: 0, height: 6 },
-		shadowOpacity: 0.1,
-		shadowRadius: 16,
-		elevation: 8,
+		borderRadius: 16,
+		borderWidth: 1,
 		marginBottom: 20,
 	},
 	statRow: {
 		flexDirection: "row",
 		alignItems: "center",
 		marginBottom: 12,
-		gap: 12,
+		gap: 10,
 	},
 	statLabel: {
 		width: 60,
-		fontSize: 12,
-		color: "#4a4e69",
+		fontSize: 11,
 		fontWeight: "600",
 	},
 	statBarBackground: {
 		flex: 1,
 		height: 8,
-		backgroundColor: "#e2e8f0",
 		borderRadius: 4,
 		overflow: "hidden",
 	},
 	statBar: {
 		height: "100%",
-		backgroundColor: "#3b82f6",
 		borderRadius: 4,
 	},
 	statValue: {
-		width: 50,
-		fontSize: 12,
-		color: "#22223b",
+		width: 40,
+		fontSize: 11,
 		fontWeight: "bold",
 		textAlign: "right",
 	},
+	// Summary Card
 	summaryCard: {
-		backgroundColor: "#f0f9ff",
 		padding: 16,
-		borderRadius: 22,
+		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: "#bfdbfe",
 		marginBottom: 32,
 	},
 	summaryRow: {
@@ -536,21 +561,81 @@ const styles = StyleSheet.create({
 		justifyContent: "space-around",
 		alignItems: "center",
 	},
+	summaryItem: {
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "center",
+	},
 	summaryLabel: {
-		fontSize: 12,
-		color: "#4a4e69",
+		fontSize: 11,
 		fontWeight: "600",
 		marginBottom: 4,
 	},
 	summaryValue: {
-		fontSize: 20,
-		color: "#3b82f6",
+		fontSize: 16,
 		fontWeight: "bold",
 	},
 	summaryDivider: {
 		width: 1,
 		height: 50,
-		backgroundColor: "#bfdbfe",
+		marginHorizontal: 12,
+	},
+	// Leaderboard Card
+	leaderboardCard: {
+		padding: 16,
+		borderRadius: 16,
+		borderWidth: 1,
+		marginBottom: 20,
+	},
+	leaderboardList: {
+		marginTop: 12,
+	},
+	leaderboardRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingVertical: 12,
+		borderBottomWidth: 1,
+		gap: 12,
+	},
+	rankBadge: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	rankText: {
+		fontSize: 12,
+		fontWeight: "bold",
+	},
+	userInfo: {
+		flex: 1,
+	},
+	userName: {
+		fontSize: 13,
+		fontWeight: "600",
+		marginBottom: 4,
+	},
+	userStats: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+	},
+	streakText: {
+		fontSize: 10,
+		fontWeight: "500",
+	},
+	calorieInfo: {
+		alignItems: "flex-end",
+	},
+	calorieValue: {
+		fontSize: 13,
+		fontWeight: "bold",
+		marginBottom: 2,
+	},
+	calorieLabel: {
+		fontSize: 9,
+		fontWeight: "500",
 	},
 	footer: {
 		height: Platform.OS === "android" ? 80 : 32,

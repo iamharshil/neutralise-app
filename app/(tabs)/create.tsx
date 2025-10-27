@@ -16,7 +16,6 @@ interface FoodItem {
 
 export default function Create() {
 	const theme = useThemeStore((state) => state.theme);
-	const toggleTheme = useThemeStore((state) => state.toggleTheme);
 	const colors = themeColors[theme];
 	const insets = useSafeAreaInsets();
 	const [foodName, setFoodName] = useState("");
@@ -72,9 +71,6 @@ export default function Create() {
 					<Text style={[styles.title, { color: colors.text }]}>Add Meal</Text>
 					<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Log your food intake</Text>
 				</View>
-				<TouchableOpacity onPress={toggleTheme} style={styles.themeToggle}>
-					<MaterialIcons name={theme === "dark" ? "light-mode" : "dark-mode"} size={24} color={colors.accent} />
-				</TouchableOpacity>
 			</View>
 
 			{/* Input Form */}
