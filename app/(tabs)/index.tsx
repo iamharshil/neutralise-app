@@ -1,6 +1,6 @@
 import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card } from "tamagui";
 
@@ -21,7 +21,6 @@ export default function Home() {
 	const goalCalories = 2000;
 	const caloriePercentage = (currentCalories / goalCalories) * 100;
 
-	const streak = 12;
 	const macros = {
 		protein: { current: 45, goal: 150, unit: "g" },
 		carbs: { current: 120, goal: 250, unit: "g" },
@@ -38,7 +37,12 @@ export default function Home() {
 	];
 
 	const dynamicStyles = {
-		container: { ...styles.container, backgroundColor: colors.bg, paddingTop: insets.top + 12 },
+		container: {
+			...styles.container,
+			backgroundColor: colors.bg,
+			paddingTop: insets.top + 12,
+			paddingBottom: Platform.OS === "android" ? insets.bottom + 12 : 0,
+		},
 		header: styles.header,
 		greeting: { ...styles.greeting, color: colors.text },
 		date: { ...styles.date, color: colors.textSecondary },
@@ -75,31 +79,27 @@ export default function Home() {
 				</Text>
 			</View>
 
-			{/* Main Calorie Ring */}
-			<View style={styles.calorieRingSection}>
-				<View style={styles.calorieRing}>
-					<View style={dynamicStyles.ringBackground}>
-						<View
-							style={[
-								styles.ringProgress,
-								{
-									width: `${Math.min(caloriePercentage, 100)}%`,
-									backgroundColor:
-										caloriePercentage > 100 ? colors.red : caloriePercentage > 80 ? colors.amber : colors.green,
-								},
-							]}
-						/>
-					</View>
-					<View style={dynamicStyles.ringCenter}>
-						<Text style={dynamicStyles.calorieValue}>{currentCalories}</Text>
-						<Text style={dynamicStyles.calorieLabel}>kcal</Text>
-						<Text style={dynamicStyles.calorieGoal}>/ {goalCalories}</Text>
-					</View>
+			{/* Calorie Progress Bar */}
+			<View style={styles.calorieSection}>
+				<View style={styles.calorieHeader}>
+					<Text style={dynamicStyles.calorieValue}>{currentCalories} kcal</Text>
+					<Text style={dynamicStyles.calorieGoal}>Goal: {goalCalories}</Text>
 				</View>
-				<View style={dynamicStyles.streakBadge}>
-					<MaterialIcons name="local-fire-department" size={20} color={colors.red} />
-					<Text style={dynamicStyles.streakCount}>{streak} Day</Text>
-					<Text style={dynamicStyles.streakLabel}>Streak</Text>
+				<View style={[dynamicStyles.ringBackground, styles.progressBarContainer]}>
+					<View
+						style={[
+							styles.progressBar,
+							{
+								width: `${Math.min(caloriePercentage, 100)}%`,
+								backgroundColor:
+									caloriePercentage > 100 ? colors.red : caloriePercentage > 80 ? colors.amber : colors.green,
+							},
+						]}
+					/>
+				</View>
+				<View style={styles.progressInfo}>
+					<Text style={dynamicStyles.calorieLabel}>{caloriePercentage.toFixed(0)}% consumed</Text>
+					<Text style={dynamicStyles.calorieLabel}>{Math.max(0, goalCalories - currentCalories)} kcal remaining</Text>
 				</View>
 			</View>
 
@@ -225,7 +225,7 @@ export default function Home() {
 				</Card>
 			</View>
 
-			<View style={styles.footer} />
+			<View style={[styles.footer, Platform.OS === "android" && { height: 60 }]} />
 		</ScrollView>
 	);
 }
@@ -248,12 +248,35 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		marginTop: 4,
 	},
-	// Calorie Ring Section
+	// Calorie Section
 	calorieRingSection: {
+		flexDirection: "column",
+		alignItems: "stretch",
+		marginBottom: 24,
+	},
+	calorieSection: {
+		marginBottom: 24,
+	},
+	calorieHeader: {
 		flexDirection: "row",
+		justifyContent: "space-between",
 		alignItems: "center",
-		marginBottom: 32,
-		gap: 16,
+		marginBottom: 12,
+	},
+	progressBarContainer: {
+		height: 16,
+		borderRadius: 8,
+		overflow: "hidden",
+		marginBottom: 12,
+	},
+	progressBar: {
+		height: "100%",
+		borderRadius: 8,
+	},
+	progressInfo: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 	},
 	calorieRing: {
 		flex: 1,
@@ -276,7 +299,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	calorieValue: {
-		fontSize: 32,
+		fontSize: 24,
 		fontWeight: "700",
 		letterSpacing: -0.5,
 	},
