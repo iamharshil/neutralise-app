@@ -1,5 +1,6 @@
 import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,6 +35,8 @@ export default function Insights() {
 	const colors = themeColors[theme];
 	const insets = useSafeAreaInsets();
 	const [timeRange, setTimeRange] = useState<TimeRange>("week");
+	const [scrollY, setScrollY] = useState(0);
+	const showBlur = scrollY > 10;
 
 	const insights: InsightData[] = [
 		{
@@ -114,232 +117,255 @@ export default function Insights() {
 	};
 
 	return (
-		<ScrollView
-			style={[styles.container, { backgroundColor: colors.bg, paddingTop: insets.top + 12 }]}
-			showsVerticalScrollIndicator={false}
-		>
-			{/* Header */}
-			<View style={styles.headerRow}>
-				<View>
-					<Text style={[styles.title, { color: colors.text }]}>Insights</Text>
-					<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your nutrition analytics</Text>
-				</View>
-			</View>
-
-			{/* Time Range Selector */}
-			<View style={styles.timeRangeContainer}>
-				{(["week", "month", "year"] as const).map((range) => (
-					<TouchableOpacity
-						key={range}
-						style={[
-							styles.timeRangeButton,
-							{ borderColor: colors.border },
-							timeRange === range && { backgroundColor: colors.accent, borderColor: colors.accent },
-						]}
-						onPress={() => setTimeRange(range)}
-					>
-						<Text style={[styles.timeRangeButtonText, { color: timeRange === range ? "#fff" : colors.textSecondary }]}>
-							{range === "week" ? "Week" : range === "month" ? "Month" : "Year"}
-						</Text>
-					</TouchableOpacity>
-				))}
-			</View>
-
-			{/* Key Metrics Grid */}
-			<View style={styles.insightsGrid}>
-				{insights.map((insight) => (
-					<View
-						key={`insight-${insight.label}`}
-						style={[styles.insightCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}
-					>
-						<View style={[styles.insightIconContainer, { backgroundColor: `${colors.accent}15` }]}>
-							<MaterialIcons
-								name={insight.icon as keyof typeof MaterialIcons.glyphMap}
-								size={24}
-								color={colors.accent}
-							/>
-						</View>
-						<Text style={[styles.insightLabel, { color: colors.textSecondary }]}>{insight.label}</Text>
-						<Text style={[styles.insightValue, { color: colors.text }]}>{insight.value}</Text>
-						<Text style={[styles.insightChange, { color: insight.isPositive ? colors.green : colors.amber }]}>
-							{insight.isPositive ? "↑" : "↔"} {insight.change}
-						</Text>
+		<View style={[styles.wrapper, { backgroundColor: colors.bg }]}>
+			<ScrollView
+				style={[styles.container, { paddingTop: insets.top + 12 }]}
+				showsVerticalScrollIndicator={false}
+				onScroll={(event) => {
+					setScrollY(event.nativeEvent.contentOffset.y);
+				}}
+				scrollEventThrottle={16}
+			>
+				{/* Header */}
+				<View style={styles.headerRow}>
+					<View>
+						<Text style={[styles.title, { color: colors.text }]}>Insights</Text>
+						<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your nutrition analytics</Text>
 					</View>
-				))}
-			</View>
-
-			{/* Macro Breakdown */}
-			<View style={[styles.macroCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-				<View style={styles.cardHeader}>
-					<MaterialIcons name="pie-chart" size={20} color={colors.accent} />
-					<Text style={[styles.cardTitle, { color: colors.text }]}>Today's Macro Breakdown</Text>
 				</View>
 
-				<View style={styles.macroContainer}>
-					{/* Macro List */}
-					<View style={styles.macroList}>
-						{macroBreakdown.map((macro) => (
-							<View key={macro.label} style={[styles.macroRow, { borderBottomColor: colors.border }]}>
-								<View style={styles.macroLabelContainer}>
-									<View style={[styles.macroColorDot, { backgroundColor: macro.color }]} />
-									<View>
-										<Text style={[styles.macroLabel, { color: colors.textSecondary }]}>{macro.label}</Text>
-										<Text style={[styles.macroValue, { color: colors.text }]}>{macro.value}g</Text>
-									</View>
-								</View>
-								<Text style={[styles.macroPercentage, { color: colors.accent }]}>{macro.percentage}%</Text>
+				{/* Time Range Selector */}
+				<View style={styles.timeRangeContainer}>
+					{(["week", "month", "year"] as const).map((range) => (
+						<TouchableOpacity
+							key={range}
+							style={[
+								styles.timeRangeButton,
+								{ borderColor: colors.border },
+								timeRange === range && { backgroundColor: colors.accent, borderColor: colors.accent },
+							]}
+							onPress={() => setTimeRange(range)}
+						>
+							<Text
+								style={[styles.timeRangeButtonText, { color: timeRange === range ? "#fff" : colors.textSecondary }]}
+							>
+								{range === "week" ? "Week" : range === "month" ? "Month" : "Year"}
+							</Text>
+						</TouchableOpacity>
+					))}
+				</View>
+
+				{/* Key Metrics Grid */}
+				<View style={styles.insightsGrid}>
+					{insights.map((insight) => (
+						<View
+							key={`insight-${insight.label}`}
+							style={[styles.insightCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}
+						>
+							<View style={[styles.insightIconContainer, { backgroundColor: `${colors.accent}15` }]}>
+								<MaterialIcons
+									name={insight.icon as keyof typeof MaterialIcons.glyphMap}
+									size={24}
+									color={colors.accent}
+								/>
 							</View>
-						))}
-					</View>
-
-					{/* Macro Progress Bar */}
-					<View style={styles.macroChart}>
-						{macroBreakdown.map((macro, barIndex) => (
-							<View
-								key={`bar-${macro.label}`}
-								style={[
-									styles.macroBar,
-									{
-										flex: macro.percentage,
-										backgroundColor: macro.color,
-										borderTopLeftRadius: barIndex === 0 ? 8 : 0,
-										borderBottomLeftRadius: barIndex === 0 ? 8 : 0,
-										borderTopRightRadius: barIndex === macroBreakdown.length - 1 ? 8 : 0,
-										borderBottomRightRadius: barIndex === macroBreakdown.length - 1 ? 8 : 0,
-									},
-								]}
-							/>
-						))}
-					</View>
-				</View>
-			</View>
-
-			{/* Weekly Trend Chart */}
-			<View style={[styles.trendCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-				<View style={styles.cardHeader}>
-					<MaterialIcons name="show-chart" size={20} color={colors.accent} />
-					<Text style={[styles.cardTitle, { color: colors.text }]}>Weekly Trend</Text>
+							<Text style={[styles.insightLabel, { color: colors.textSecondary }]}>{insight.label}</Text>
+							<Text style={[styles.insightValue, { color: colors.text }]}>{insight.value}</Text>
+							<Text style={[styles.insightChange, { color: insight.isPositive ? colors.green : colors.amber }]}>
+								{insight.isPositive ? "↑" : "↔"} {insight.change}
+							</Text>
+						</View>
+					))}
 				</View>
 
-				<View style={styles.trendData}>
-					{weeklyData.map((item) => (
-						<View key={item.day} style={styles.trendItem}>
-							<View style={[styles.trendBarContainer, { backgroundColor: colors.bgTertiary }]}>
+				{/* Macro Breakdown */}
+				<View style={[styles.macroCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+					<View style={styles.cardHeader}>
+						<MaterialIcons name="pie-chart" size={20} color={colors.accent} />
+						<Text style={[styles.cardTitle, { color: colors.text }]}>Today's Macro Breakdown</Text>
+					</View>
+
+					<View style={styles.macroContainer}>
+						{/* Macro List */}
+						<View style={styles.macroList}>
+							{macroBreakdown.map((macro) => (
+								<View key={macro.label} style={[styles.macroRow, { borderBottomColor: colors.border }]}>
+									<View style={styles.macroLabelContainer}>
+										<View style={[styles.macroColorDot, { backgroundColor: macro.color }]} />
+										<View>
+											<Text style={[styles.macroLabel, { color: colors.textSecondary }]}>{macro.label}</Text>
+											<Text style={[styles.macroValue, { color: colors.text }]}>{macro.value}g</Text>
+										</View>
+									</View>
+									<Text style={[styles.macroPercentage, { color: colors.accent }]}>{macro.percentage}%</Text>
+								</View>
+							))}
+						</View>
+
+						{/* Macro Progress Bar */}
+						<View style={styles.macroChart}>
+							{macroBreakdown.map((macro, barIndex) => (
 								<View
+									key={`bar-${macro.label}`}
 									style={[
-										styles.trendBar,
+										styles.macroBar,
 										{
-											height: `${Math.min((item.percentage / 115) * 100, 100)}%`,
-											backgroundColor:
-												item.percentage > 105 ? colors.red : item.percentage < 85 ? colors.amber : colors.green,
+											flex: macro.percentage,
+											backgroundColor: macro.color,
+											borderTopLeftRadius: barIndex === 0 ? 8 : 0,
+											borderBottomLeftRadius: barIndex === 0 ? 8 : 0,
+											borderTopRightRadius: barIndex === macroBreakdown.length - 1 ? 8 : 0,
+											borderBottomRightRadius: barIndex === macroBreakdown.length - 1 ? 8 : 0,
 										},
 									]}
 								/>
-							</View>
-							<Text style={[styles.trendDay, { color: colors.textSecondary }]}>{item.day}</Text>
-							<Text style={[styles.trendValue, { color: colors.text }]}>{item.calories}</Text>
+							))}
 						</View>
-					))}
+					</View>
 				</View>
-			</View>
 
-			{/* Monthly Stats - Show on Month selection */}
-			{timeRange === "month" && (
-				<View style={[styles.statsCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+				{/* Weekly Trend Chart */}
+				<View style={[styles.trendCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
 					<View style={styles.cardHeader}>
-						<MaterialIcons name="calendar-month" size={20} color={colors.accent} />
-						<Text style={[styles.cardTitle, { color: colors.text }]}>Monthly Breakdown</Text>
+						<MaterialIcons name="show-chart" size={20} color={colors.accent} />
+						<Text style={[styles.cardTitle, { color: colors.text }]}>Weekly Trend</Text>
 					</View>
 
-					{monthlyStats.map((stat) => (
-						<View key={`month-${stat.week}`} style={styles.statRow}>
-							<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.week}</Text>
-							<View style={[styles.statBarBackground, { backgroundColor: colors.bgTertiary }]}>
-								<View
-									style={[styles.statBar, { width: `${(stat.avg / 2200) * 100}%`, backgroundColor: colors.accent }]}
-								/>
-							</View>
-							<Text style={[styles.statValue, { color: colors.text }]}>{stat.avg}</Text>
-						</View>
-					))}
-				</View>
-			)}
-
-			{/* Summary Card */}
-			<View style={[styles.summaryCard, { backgroundColor: `${colors.accent}15`, borderColor: colors.accent }]}>
-				<View style={styles.summaryRow}>
-					<View style={styles.summaryItem}>
-						<MaterialIcons name="whatshot" size={20} color={colors.accent} />
-						<View style={{ marginLeft: 12, flex: 1 }}>
-							<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Total Calories</Text>
-							<Text style={[styles.summaryValue, { color: colors.text }]}>14,220 kcal</Text>
-						</View>
-					</View>
-					<View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
-					<View style={styles.summaryItem}>
-						<MaterialIcons name="trending-up" size={20} color={colors.accent} />
-						<View style={{ marginLeft: 12, flex: 1 }}>
-							<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Weekly Avg</Text>
-							<Text style={[styles.summaryValue, { color: colors.text }]}>2,031 kcal</Text>
-						</View>
-					</View>
-				</View>
-			</View>
-
-			{/* Top 25 Users Leaderboard */}
-			<View style={[styles.leaderboardCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-				<View style={styles.cardHeader}>
-					<MaterialIcons name="leaderboard" size={20} color={colors.accent} />
-					<Text style={[styles.cardTitle, { color: colors.text }]}>
-						{timeRange === "week" ? "Top 5 This Week" : timeRange === "month" ? "Top 5 This Month" : "Top 5 Today"}
-					</Text>
-				</View>
-
-				<View style={styles.leaderboardList}>
-					{(timeRange === "week" ? topUsers.week : timeRange === "month" ? topUsers.month : topUsers.today).map(
-						(user, index) => (
-							<View key={`user-${user.rank}`} style={[styles.leaderboardRow, { borderBottomColor: colors.border }]}>
-								<View style={styles.rankBadge}>
-									{index === 0 ? (
-										<MaterialIcons name="emoji-events" size={20} color="#FFD700" />
-									) : index === 1 ? (
-										<MaterialIcons name="emoji-events" size={20} color="#C0C0C0" />
-									) : index === 2 ? (
-										<MaterialIcons name="emoji-events" size={20} color="#CD7F32" />
-									) : (
-										<Text style={[styles.rankText, { color: colors.textSecondary }]}>#{user.rank}</Text>
-									)}
+					<View style={styles.trendData}>
+						{weeklyData.map((item) => (
+							<View key={item.day} style={styles.trendItem}>
+								<View style={[styles.trendBarContainer, { backgroundColor: colors.bgTertiary }]}>
+									<View
+										style={[
+											styles.trendBar,
+											{
+												height: `${Math.min((item.percentage / 115) * 100, 100)}%`,
+												backgroundColor:
+													item.percentage > 105 ? colors.red : item.percentage < 85 ? colors.amber : colors.green,
+											},
+										]}
+									/>
 								</View>
+								<Text style={[styles.trendDay, { color: colors.textSecondary }]}>{item.day}</Text>
+								<Text style={[styles.trendValue, { color: colors.text }]}>{item.calories}</Text>
+							</View>
+						))}
+					</View>
+				</View>
 
-								<View style={styles.userInfo}>
-									<Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
-										{user.name}
-									</Text>
-									<View style={styles.userStats}>
-										<MaterialIcons name="local-fire-department" size={12} color={colors.red} />
-										<Text style={[styles.streakText, { color: colors.textSecondary }]}>{user.streak} day streak</Text>
+				{/* Monthly Stats - Show on Month selection */}
+				{timeRange === "month" && (
+					<View style={[styles.statsCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+						<View style={styles.cardHeader}>
+							<MaterialIcons name="calendar-month" size={20} color={colors.accent} />
+							<Text style={[styles.cardTitle, { color: colors.text }]}>Monthly Breakdown</Text>
+						</View>
+
+						{monthlyStats.map((stat) => (
+							<View key={`month-${stat.week}`} style={styles.statRow}>
+								<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.week}</Text>
+								<View style={[styles.statBarBackground, { backgroundColor: colors.bgTertiary }]}>
+									<View
+										style={[styles.statBar, { width: `${(stat.avg / 2200) * 100}%`, backgroundColor: colors.accent }]}
+									/>
+								</View>
+								<Text style={[styles.statValue, { color: colors.text }]}>{stat.avg}</Text>
+							</View>
+						))}
+					</View>
+				)}
+
+				{/* Summary Card */}
+				<View style={[styles.summaryCard, { backgroundColor: `${colors.accent}15`, borderColor: colors.accent }]}>
+					<View style={styles.summaryRow}>
+						<View style={styles.summaryItem}>
+							<MaterialIcons name="whatshot" size={20} color={colors.accent} />
+							<View style={{ marginLeft: 12, flex: 1 }}>
+								<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Total Calories</Text>
+								<Text style={[styles.summaryValue, { color: colors.text }]}>14,220 kcal</Text>
+							</View>
+						</View>
+						<View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
+						<View style={styles.summaryItem}>
+							<MaterialIcons name="trending-up" size={20} color={colors.accent} />
+							<View style={{ marginLeft: 12, flex: 1 }}>
+								<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Weekly Avg</Text>
+								<Text style={[styles.summaryValue, { color: colors.text }]}>2,031 kcal</Text>
+							</View>
+						</View>
+					</View>
+				</View>
+
+				{/* Top 25 Users Leaderboard */}
+				<View style={[styles.leaderboardCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+					<View style={styles.cardHeader}>
+						<MaterialIcons name="leaderboard" size={20} color={colors.accent} />
+						<Text style={[styles.cardTitle, { color: colors.text }]}>
+							{timeRange === "week" ? "Top 5 This Week" : timeRange === "month" ? "Top 5 This Month" : "Top 5 Today"}
+						</Text>
+					</View>
+
+					<View style={styles.leaderboardList}>
+						{(timeRange === "week" ? topUsers.week : timeRange === "month" ? topUsers.month : topUsers.today).map(
+							(user, index) => (
+								<View key={`user-${user.rank}`} style={[styles.leaderboardRow, { borderBottomColor: colors.border }]}>
+									<View style={styles.rankBadge}>
+										{index === 0 ? (
+											<MaterialIcons name="emoji-events" size={20} color="#FFD700" />
+										) : index === 1 ? (
+											<MaterialIcons name="emoji-events" size={20} color="#C0C0C0" />
+										) : index === 2 ? (
+											<MaterialIcons name="emoji-events" size={20} color="#CD7F32" />
+										) : (
+											<Text style={[styles.rankText, { color: colors.textSecondary }]}>#{user.rank}</Text>
+										)}
+									</View>
+
+									<View style={styles.userInfo}>
+										<Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
+											{user.name}
+										</Text>
+										<View style={styles.userStats}>
+											<MaterialIcons name="local-fire-department" size={12} color={colors.red} />
+											<Text style={[styles.streakText, { color: colors.textSecondary }]}>{user.streak} day streak</Text>
+										</View>
+									</View>
+
+									<View style={styles.calorieInfo}>
+										<Text style={[styles.calorieValue, { color: colors.accent }]}>
+											{user.calories.toLocaleString()}
+										</Text>
+										<Text style={[styles.calorieLabel, { color: colors.textSecondary }]}>kcal</Text>
 									</View>
 								</View>
-
-								<View style={styles.calorieInfo}>
-									<Text style={[styles.calorieValue, { color: colors.accent }]}>{user.calories.toLocaleString()}</Text>
-									<Text style={[styles.calorieLabel, { color: colors.textSecondary }]}>kcal</Text>
-								</View>
-							</View>
-						),
-					)}
+							),
+						)}
+					</View>
 				</View>
-			</View>
 
-			<View style={styles.footer} />
-		</ScrollView>
+				<View style={styles.footer} />
+			</ScrollView>
+
+			{showBlur && <BlurView intensity={90} style={[styles.blurHeader, { height: insets.top }]} />}
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
+	wrapper: {
+		flex: 1,
+	},
 	container: {
 		flex: 1,
 		padding: 16,
+	},
+	blurHeader: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		zIndex: 100,
+		pointerEvents: "none",
 	},
 	headerRow: {
 		flexDirection: "row",

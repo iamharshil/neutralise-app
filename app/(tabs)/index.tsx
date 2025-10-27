@@ -1,5 +1,7 @@
 import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Card } from "tamagui";
@@ -16,6 +18,10 @@ export default function Home() {
 	const theme = useThemeStore((state) => state.theme);
 	const colors = themeColors[theme];
 	const insets = useSafeAreaInsets();
+	const [scrollY, setScrollY] = useState(0);
+	const showBlur = scrollY > 10;
+	// Theme-aware blur intensity: higher for dark mode, lower for light mode
+	const blurIntensity = theme === "dark" ? 90 : 70;
 
 	const currentCalories = 1250;
 	const goalCalories = 2000;
@@ -70,170 +76,192 @@ export default function Home() {
 	};
 
 	return (
-		<ScrollView style={dynamicStyles.container} showsVerticalScrollIndicator={false}>
-			{/* Header */}
-			<View style={dynamicStyles.header}>
-				<Text style={dynamicStyles.greeting}>Today's Progress</Text>
-				<Text style={dynamicStyles.date}>
-					{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-				</Text>
-			</View>
-
-			{/* Calorie Progress Bar */}
-			<View style={styles.calorieSection}>
-				<View style={styles.calorieHeader}>
-					<Text style={dynamicStyles.calorieValue}>{currentCalories} kcal</Text>
-					<Text style={dynamicStyles.calorieGoal}>Goal: {goalCalories}</Text>
-				</View>
-				<View style={[dynamicStyles.ringBackground, styles.progressBarContainer]}>
-					<View
-						style={[
-							styles.progressBar,
-							{
-								width: `${Math.min(caloriePercentage, 100)}%`,
-								backgroundColor:
-									caloriePercentage > 100 ? colors.red : caloriePercentage > 80 ? colors.amber : colors.green,
-							},
-						]}
-					/>
-				</View>
-				<View style={styles.progressInfo}>
-					<Text style={dynamicStyles.calorieLabel}>{caloriePercentage.toFixed(0)}% consumed</Text>
-					<Text style={dynamicStyles.calorieLabel}>{Math.max(0, goalCalories - currentCalories)} kcal remaining</Text>
-				</View>
-			</View>
-
-			{/* Macros Grid */}
-			<View style={styles.macrosSection}>
-				<Text style={dynamicStyles.sectionTitle}>Macronutrients</Text>
-				<View style={styles.macrosGrid}>
-					{/* Protein */}
-					<Card style={dynamicStyles.macroCard}>
-						<View style={[styles.macroIcon, { backgroundColor: `${colors.red}15` }]}>
-							<MaterialIcons name="egg" size={24} color={colors.red} />
-						</View>
-						<Text style={dynamicStyles.macroName}>Protein</Text>
-						<Text style={dynamicStyles.macroAmount}>{macros.protein.current}g</Text>
-						<View style={dynamicStyles.macroBar}>
-							<View
-								style={[
-									styles.macroFill,
-									{
-										width: `${Math.min((macros.protein.current / macros.protein.goal) * 100, 100)}%`,
-										backgroundColor: colors.red,
-									},
-								]}
-							/>
-						</View>
-						<Text style={dynamicStyles.macroGoal}>Goal: {macros.protein.goal}g</Text>
-					</Card>
-
-					{/* Carbs */}
-					<Card style={dynamicStyles.macroCard}>
-						<View style={[styles.macroIcon, { backgroundColor: `${colors.blue}15` }]}>
-							<MaterialIcons name="grain" size={24} color={colors.blue} />
-						</View>
-						<Text style={dynamicStyles.macroName}>Carbs</Text>
-						<Text style={dynamicStyles.macroAmount}>{macros.carbs.current}g</Text>
-						<View style={dynamicStyles.macroBar}>
-							<View
-								style={[
-									styles.macroFill,
-									{
-										width: `${Math.min((macros.carbs.current / macros.carbs.goal) * 100, 100)}%`,
-										backgroundColor: colors.blue,
-									},
-								]}
-							/>
-						</View>
-						<Text style={dynamicStyles.macroGoal}>Goal: {macros.carbs.goal}g</Text>
-					</Card>
-
-					{/* Fat */}
-					<Card style={dynamicStyles.macroCard}>
-						<View style={[styles.macroIcon, { backgroundColor: `${colors.amber}15` }]}>
-							<MaterialIcons name="local-dining" size={24} color={colors.amber} />
-						</View>
-						<Text style={dynamicStyles.macroName}>Fat</Text>
-						<Text style={dynamicStyles.macroAmount}>{macros.fat.current}g</Text>
-						<View style={dynamicStyles.macroBar}>
-							<View
-								style={[
-									styles.macroFill,
-									{
-										width: `${Math.min((macros.fat.current / macros.fat.goal) * 100, 100)}%`,
-										backgroundColor: colors.amber,
-									},
-								]}
-							/>
-						</View>
-						<Text style={dynamicStyles.macroGoal}>Goal: {macros.fat.goal}g</Text>
-					</Card>
-				</View>
-			</View>
-
-			{/* Achievements */}
-			<View style={styles.achievementsSection}>
-				<View style={styles.achievementsHeader}>
-					<Text style={dynamicStyles.sectionTitle}>Achievements</Text>
-					<Text style={dynamicStyles.achievementCount}>
-						{badges.filter((b) => b.achieved).length} / {badges.length}
+		<View style={[styles.wrapper, { backgroundColor: colors.bg }]}>
+			<ScrollView
+				style={dynamicStyles.container}
+				showsVerticalScrollIndicator={false}
+				onScroll={(event) => {
+					setScrollY(event.nativeEvent.contentOffset.y);
+				}}
+				scrollEventThrottle={16}
+			>
+				{/* Header */}
+				<View style={dynamicStyles.header}>
+					<Text style={dynamicStyles.greeting}>Today's Progress</Text>
+					<Text style={dynamicStyles.date}>
+						{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
 					</Text>
 				</View>
-				<View style={styles.badgesGrid}>
-					{badges.map((badge) => (
-						<TouchableOpacity key={badge.id} style={[dynamicStyles.badge, !badge.achieved && styles.badgeInactive]}>
-							<View
-								style={[
-									styles.badgeIcon,
-									{ backgroundColor: badge.achieved ? `${badge.color}15` : `${colors.textSecondary}08` },
-								]}
-							>
-								<MaterialIcons
-									name={badge.icon as keyof typeof MaterialIcons.glyphMap}
-									size={24}
-									color={badge.achieved ? badge.color : colors.textSecondary}
+
+				{/* Calorie Progress Bar */}
+				<View style={styles.calorieSection}>
+					<View style={styles.calorieHeader}>
+						<Text style={dynamicStyles.calorieValue}>{currentCalories} kcal</Text>
+						<Text style={dynamicStyles.calorieGoal}>Goal: {goalCalories}</Text>
+					</View>
+					<View style={[dynamicStyles.ringBackground, styles.progressBarContainer]}>
+						<View
+							style={[
+								styles.progressBar,
+								{
+									width: `${Math.min(caloriePercentage, 100)}%`,
+									backgroundColor:
+										caloriePercentage > 100 ? colors.red : caloriePercentage > 80 ? colors.amber : colors.green,
+								},
+							]}
+						/>
+					</View>
+					<View style={styles.progressInfo}>
+						<Text style={dynamicStyles.calorieLabel}>{caloriePercentage.toFixed(0)}% consumed</Text>
+						<Text style={dynamicStyles.calorieLabel}>{Math.max(0, goalCalories - currentCalories)} kcal remaining</Text>
+					</View>
+				</View>
+
+				{/* Macros Grid */}
+				<View style={styles.macrosSection}>
+					<Text style={dynamicStyles.sectionTitle}>Macronutrients</Text>
+					<View style={styles.macrosGrid}>
+						{/* Protein */}
+						<Card style={dynamicStyles.macroCard}>
+							<View style={[styles.macroIcon, { backgroundColor: `${colors.red}15` }]}>
+								<MaterialIcons name="egg" size={24} color={colors.red} />
+							</View>
+							<Text style={dynamicStyles.macroName}>Protein</Text>
+							<Text style={dynamicStyles.macroAmount}>{macros.protein.current}g</Text>
+							<View style={dynamicStyles.macroBar}>
+								<View
+									style={[
+										styles.macroFill,
+										{
+											width: `${Math.min((macros.protein.current / macros.protein.goal) * 100, 100)}%`,
+											backgroundColor: colors.red,
+										},
+									]}
 								/>
 							</View>
-							<Text style={[dynamicStyles.badgeName, !badge.achieved && dynamicStyles.badgeNameInactive]}>
-								{badge.name}
-							</Text>
-						</TouchableOpacity>
-					))}
+							<Text style={dynamicStyles.macroGoal}>Goal: {macros.protein.goal}g</Text>
+						</Card>
+
+						{/* Carbs */}
+						<Card style={dynamicStyles.macroCard}>
+							<View style={[styles.macroIcon, { backgroundColor: `${colors.blue}15` }]}>
+								<MaterialIcons name="grain" size={24} color={colors.blue} />
+							</View>
+							<Text style={dynamicStyles.macroName}>Carbs</Text>
+							<Text style={dynamicStyles.macroAmount}>{macros.carbs.current}g</Text>
+							<View style={dynamicStyles.macroBar}>
+								<View
+									style={[
+										styles.macroFill,
+										{
+											width: `${Math.min((macros.carbs.current / macros.carbs.goal) * 100, 100)}%`,
+											backgroundColor: colors.blue,
+										},
+									]}
+								/>
+							</View>
+							<Text style={dynamicStyles.macroGoal}>Goal: {macros.carbs.goal}g</Text>
+						</Card>
+
+						{/* Fat */}
+						<Card style={dynamicStyles.macroCard}>
+							<View style={[styles.macroIcon, { backgroundColor: `${colors.amber}15` }]}>
+								<MaterialIcons name="local-dining" size={24} color={colors.amber} />
+							</View>
+							<Text style={dynamicStyles.macroName}>Fat</Text>
+							<Text style={dynamicStyles.macroAmount}>{macros.fat.current}g</Text>
+							<View style={dynamicStyles.macroBar}>
+								<View
+									style={[
+										styles.macroFill,
+										{
+											width: `${Math.min((macros.fat.current / macros.fat.goal) * 100, 100)}%`,
+											backgroundColor: colors.amber,
+										},
+									]}
+								/>
+							</View>
+							<Text style={dynamicStyles.macroGoal}>Goal: {macros.fat.goal}g</Text>
+						</Card>
+					</View>
 				</View>
-			</View>
 
-			{/* Quick Stats */}
-			<View style={styles.statsSection}>
-				<Card style={dynamicStyles.statCard}>
-					<View style={styles.statItem}>
-						<MaterialIcons name="calendar-today" size={20} color={colors.accent} />
-						<View style={styles.statInfo}>
-							<Text style={dynamicStyles.statLabel}>This Week</Text>
-							<Text style={dynamicStyles.statValue}>14,220 kcal</Text>
-						</View>
+				{/* Achievements */}
+				<View style={styles.achievementsSection}>
+					<View style={styles.achievementsHeader}>
+						<Text style={dynamicStyles.sectionTitle}>Achievements</Text>
+						<Text style={dynamicStyles.achievementCount}>
+							{badges.filter((b) => b.achieved).length} / {badges.length}
+						</Text>
 					</View>
-				</Card>
-				<Card style={dynamicStyles.statCard}>
-					<View style={styles.statItem}>
-						<MaterialIcons name="trending-up" size={20} color={colors.green} />
-						<View style={styles.statInfo}>
-							<Text style={dynamicStyles.statLabel}>Average</Text>
-							<Text style={dynamicStyles.statValue}>2,031 kcal</Text>
-						</View>
+					<View style={styles.badgesGrid}>
+						{badges.map((badge) => (
+							<TouchableOpacity key={badge.id} style={[dynamicStyles.badge, !badge.achieved && styles.badgeInactive]}>
+								<View
+									style={[
+										styles.badgeIcon,
+										{ backgroundColor: badge.achieved ? `${badge.color}15` : `${colors.textSecondary}08` },
+									]}
+								>
+									<MaterialIcons
+										name={badge.icon as keyof typeof MaterialIcons.glyphMap}
+										size={24}
+										color={badge.achieved ? badge.color : colors.textSecondary}
+									/>
+								</View>
+								<Text style={[dynamicStyles.badgeName, !badge.achieved && dynamicStyles.badgeNameInactive]}>
+									{badge.name}
+								</Text>
+							</TouchableOpacity>
+						))}
 					</View>
-				</Card>
-			</View>
+				</View>
 
-			<View style={[styles.footer, Platform.OS === "android" && { height: 60 }]} />
-		</ScrollView>
+				{/* Quick Stats */}
+				<View style={styles.statsSection}>
+					<Card style={dynamicStyles.statCard}>
+						<View style={styles.statItem}>
+							<MaterialIcons name="calendar-today" size={20} color={colors.accent} />
+							<View style={styles.statInfo}>
+								<Text style={dynamicStyles.statLabel}>This Week</Text>
+								<Text style={dynamicStyles.statValue}>14,220 kcal</Text>
+							</View>
+						</View>
+					</Card>
+					<Card style={dynamicStyles.statCard}>
+						<View style={styles.statItem}>
+							<MaterialIcons name="trending-up" size={20} color={colors.green} />
+							<View style={styles.statInfo}>
+								<Text style={dynamicStyles.statLabel}>Average</Text>
+								<Text style={dynamicStyles.statValue}>2,031 kcal</Text>
+							</View>
+						</View>
+					</Card>
+				</View>
+
+				<View style={[styles.footer, Platform.OS === "android" && { height: 60 }]} />
+			</ScrollView>
+
+			{showBlur && <BlurView intensity={blurIntensity} style={[styles.blurHeader, { height: insets.top }]} />}
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
+	wrapper: {
+		flex: 1,
+	},
 	container: {
 		flex: 1,
 		paddingHorizontal: 16,
+	},
+	blurHeader: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		zIndex: 100,
+		pointerEvents: "none",
 	},
 	header: {
 		marginBottom: 24,

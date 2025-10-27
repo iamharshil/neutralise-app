@@ -1,5 +1,6 @@
 import { themeColors, useThemeStore } from "@/hooks/use-theme";
 import { MaterialIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useState } from "react";
 import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +25,8 @@ export default function Create() {
 	const [carbs, setCarbs] = useState("");
 	const [fat, setFat] = useState("");
 	const [servingSize, setServingSize] = useState("");
+	const [scrollY, setScrollY] = useState(0);
+	const showBlur = scrollY > 10;
 	const [recentFoods, setRecentFoods] = useState<FoodItem[]>([
 		{ id: "1", name: "Chicken Breast", calories: 165, protein: 31, carbs: 0, fat: 3.6, servingSize: "100g" },
 		{ id: "2", name: "Brown Rice", calories: 111, protein: 2.6, carbs: 23, fat: 0.9, servingSize: "100g" },
@@ -61,178 +64,197 @@ export default function Create() {
 	};
 
 	return (
-		<ScrollView
-			style={[styles.container, { backgroundColor: colors.bg, paddingTop: insets.top + 12 }]}
-			showsVerticalScrollIndicator={false}
-		>
-			{/* Header */}
-			<View style={styles.headerRow}>
-				<View>
-					<Text style={[styles.title, { color: colors.text }]}>Add Meal</Text>
-					<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Log your food intake</Text>
-				</View>
-			</View>
-
-			{/* Input Form */}
-			<View style={[styles.formCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-				<View style={styles.formHeader}>
-					<MaterialIcons name="edit" size={20} color={colors.accent} />
-					<Text style={[styles.formTitle, { color: colors.text }]}>Add Food Details</Text>
-				</View>
-
-				{/* Food Name Input */}
-				<View style={styles.formGroup}>
-					<Text style={[styles.label, { color: colors.textSecondary }]}>Food Name</Text>
-					<TextInput
-						style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-						placeholder="e.g., Chicken Breast"
-						placeholderTextColor={colors.textTertiary}
-						value={foodName}
-						onChangeText={setFoodName}
-					/>
-				</View>
-
-				{/* Calories Input */}
-				<View style={styles.formGroup}>
-					<Text style={[styles.label, { color: colors.textSecondary }]}>Calories (kcal)</Text>
-					<TextInput
-						style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-						placeholder="e.g., 165"
-						placeholderTextColor={colors.textTertiary}
-						keyboardType="decimal-pad"
-						value={calories}
-						onChangeText={setCalories}
-					/>
-				</View>
-
-				{/* Macros Row */}
-				<View style={styles.macrosGrid}>
-					<View style={[styles.macroInputGroup, { flex: 1 }]}>
-						<Text style={[styles.label, { color: colors.textSecondary }]}>Protein (g)</Text>
-						<TextInput
-							style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-							placeholder="0"
-							placeholderTextColor={colors.textTertiary}
-							keyboardType="decimal-pad"
-							value={protein}
-							onChangeText={setProtein}
-						/>
-					</View>
-					<View style={[styles.macroInputGroup, { flex: 1 }]}>
-						<Text style={[styles.label, { color: colors.textSecondary }]}>Carbs (g)</Text>
-						<TextInput
-							style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-							placeholder="0"
-							placeholderTextColor={colors.textTertiary}
-							keyboardType="decimal-pad"
-							value={carbs}
-							onChangeText={setCarbs}
-						/>
-					</View>
-					<View style={[styles.macroInputGroup, { flex: 1 }]}>
-						<Text style={[styles.label, { color: colors.textSecondary }]}>Fat (g)</Text>
-						<TextInput
-							style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-							placeholder="0"
-							placeholderTextColor={colors.textTertiary}
-							keyboardType="decimal-pad"
-							value={fat}
-							onChangeText={setFat}
-						/>
+		<View style={[styles.wrapper, { backgroundColor: colors.bg }]}>
+			<ScrollView
+				style={[styles.container, { paddingTop: insets.top + 12 }]}
+				showsVerticalScrollIndicator={false}
+				onScroll={(event) => {
+					setScrollY(event.nativeEvent.contentOffset.y);
+				}}
+				scrollEventThrottle={16}
+			>
+				{/* Header */}
+				<View style={styles.headerRow}>
+					<View>
+						<Text style={[styles.title, { color: colors.text }]}>Add Meal</Text>
+						<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Log your food intake</Text>
 					</View>
 				</View>
 
-				{/* Serving Size */}
-				<View style={styles.formGroup}>
-					<Text style={[styles.label, { color: colors.textSecondary }]}>Serving Size</Text>
-					<TextInput
-						style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-						placeholder="e.g., 100g"
-						placeholderTextColor={colors.textTertiary}
-						value={servingSize}
-						onChangeText={setServingSize}
-					/>
-				</View>
+				{/* Input Form */}
+				<View style={[styles.formCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+					<View style={styles.formHeader}>
+						<MaterialIcons name="edit" size={20} color={colors.accent} />
+						<Text style={[styles.formTitle, { color: colors.text }]}>Add Food Details</Text>
+					</View>
 
-				{/* Add Button */}
-				<TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={handleAddFood}>
-					<MaterialIcons name="add-circle" size={24} color="#fff" />
-					<Text style={styles.addButtonText}>Add to Today's Intake</Text>
-				</TouchableOpacity>
-			</View>
+					{/* Food Name Input */}
+					<View style={styles.formGroup}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>Food Name</Text>
+						<TextInput
+							style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
+							placeholder="e.g., Chicken Breast"
+							placeholderTextColor={colors.textTertiary}
+							value={foodName}
+							onChangeText={setFoodName}
+						/>
+					</View>
 
-			{/* Recent Foods Section */}
-			{recentFoods.length > 0 && (
-				<>
-					<View style={styles.sectionHeader}>
-						<View style={styles.sectionTitleRow}>
-							<MaterialIcons name="history" size={20} color={colors.accent} />
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Foods</Text>
+					{/* Calories Input */}
+					<View style={styles.formGroup}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>Calories (kcal)</Text>
+						<TextInput
+							style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
+							placeholder="e.g., 165"
+							placeholderTextColor={colors.textTertiary}
+							keyboardType="decimal-pad"
+							value={calories}
+							onChangeText={setCalories}
+						/>
+					</View>
+
+					{/* Macros Row */}
+					<View style={styles.macrosGrid}>
+						<View style={[styles.macroInputGroup, { flex: 1 }]}>
+							<Text style={[styles.label, { color: colors.textSecondary }]}>Protein (g)</Text>
+							<TextInput
+								style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
+								placeholder="0"
+								placeholderTextColor={colors.textTertiary}
+								keyboardType="decimal-pad"
+								value={protein}
+								onChangeText={setProtein}
+							/>
 						</View>
-						<Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Tap to add</Text>
+						<View style={[styles.macroInputGroup, { flex: 1 }]}>
+							<Text style={[styles.label, { color: colors.textSecondary }]}>Carbs (g)</Text>
+							<TextInput
+								style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
+								placeholder="0"
+								placeholderTextColor={colors.textTertiary}
+								keyboardType="decimal-pad"
+								value={carbs}
+								onChangeText={setCarbs}
+							/>
+						</View>
+						<View style={[styles.macroInputGroup, { flex: 1 }]}>
+							<Text style={[styles.label, { color: colors.textSecondary }]}>Fat (g)</Text>
+							<TextInput
+								style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
+								placeholder="0"
+								placeholderTextColor={colors.textTertiary}
+								keyboardType="decimal-pad"
+								value={fat}
+								onChangeText={setFat}
+							/>
+						</View>
 					</View>
 
-					{recentFoods.map((food) => (
-						<TouchableOpacity key={food.id} onPress={() => handleSelectFood(food)} activeOpacity={0.6}>
-							<View style={[styles.foodCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
-								<View style={[styles.foodIconContainer, { backgroundColor: `${colors.accent}15` }]}>
-									<MaterialIcons name="restaurant" size={20} color={colors.accent} />
-								</View>
+					{/* Serving Size */}
+					<View style={styles.formGroup}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>Serving Size</Text>
+						<TextInput
+							style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
+							placeholder="e.g., 100g"
+							placeholderTextColor={colors.textTertiary}
+							value={servingSize}
+							onChangeText={setServingSize}
+						/>
+					</View>
 
-								<View style={styles.foodContent}>
-									<View style={styles.foodTop}>
-										<View style={{ flex: 1 }}>
-											<Text style={[styles.foodName, { color: colors.text }]}>{food.name}</Text>
-											<Text style={[styles.servingSize, { color: colors.textSecondary }]}>{food.servingSize}</Text>
-										</View>
-										<View style={styles.caloriesBadge}>
-											<Text style={[styles.caloriesValue, { color: colors.accent }]}>{food.calories}</Text>
-											<Text style={[styles.caloriesLabel, { color: colors.textSecondary }]}>kcal</Text>
-										</View>
+					{/* Add Button */}
+					<TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={handleAddFood}>
+						<MaterialIcons name="add-circle" size={24} color="#fff" />
+						<Text style={styles.addButtonText}>Add to Today's Intake</Text>
+					</TouchableOpacity>
+				</View>
+
+				{/* Recent Foods Section */}
+				{recentFoods.length > 0 && (
+					<>
+						<View style={styles.sectionHeader}>
+							<View style={styles.sectionTitleRow}>
+								<MaterialIcons name="history" size={20} color={colors.accent} />
+								<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Foods</Text>
+							</View>
+							<Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Tap to add</Text>
+						</View>
+
+						{recentFoods.map((food) => (
+							<TouchableOpacity key={food.id} onPress={() => handleSelectFood(food)} activeOpacity={0.6}>
+								<View style={[styles.foodCard, { backgroundColor: colors.bgSecondary, borderColor: colors.border }]}>
+									<View style={[styles.foodIconContainer, { backgroundColor: `${colors.accent}15` }]}>
+										<MaterialIcons name="restaurant" size={20} color={colors.accent} />
 									</View>
 
-									{(food.protein > 0 || food.carbs > 0 || food.fat > 0) && (
-										<View style={styles.macrosRow}>
-											{food.protein > 0 && (
-												<View style={styles.macroBadge}>
-													<Text style={[styles.macroBadgeLabel, { color: colors.textSecondary }]}>P</Text>
-													<Text style={[styles.macroBadgeValue, { color: colors.text }]}>{food.protein}g</Text>
-												</View>
-											)}
-											{food.carbs > 0 && (
-												<View style={styles.macroBadge}>
-													<Text style={[styles.macroBadgeLabel, { color: colors.textSecondary }]}>C</Text>
-													<Text style={[styles.macroBadgeValue, { color: colors.text }]}>{food.carbs}g</Text>
-												</View>
-											)}
-											{food.fat > 0 && (
-												<View style={styles.macroBadge}>
-													<Text style={[styles.macroBadgeLabel, { color: colors.textSecondary }]}>F</Text>
-													<Text style={[styles.macroBadgeValue, { color: colors.text }]}>{food.fat}g</Text>
-												</View>
-											)}
+									<View style={styles.foodContent}>
+										<View style={styles.foodTop}>
+											<View style={{ flex: 1 }}>
+												<Text style={[styles.foodName, { color: colors.text }]}>{food.name}</Text>
+												<Text style={[styles.servingSize, { color: colors.textSecondary }]}>{food.servingSize}</Text>
+											</View>
+											<View style={styles.caloriesBadge}>
+												<Text style={[styles.caloriesValue, { color: colors.accent }]}>{food.calories}</Text>
+												<Text style={[styles.caloriesLabel, { color: colors.textSecondary }]}>kcal</Text>
+											</View>
 										</View>
-									)}
+
+										{(food.protein > 0 || food.carbs > 0 || food.fat > 0) && (
+											<View style={styles.macrosRow}>
+												{food.protein > 0 && (
+													<View style={styles.macroBadge}>
+														<Text style={[styles.macroBadgeLabel, { color: colors.textSecondary }]}>P</Text>
+														<Text style={[styles.macroBadgeValue, { color: colors.text }]}>{food.protein}g</Text>
+													</View>
+												)}
+												{food.carbs > 0 && (
+													<View style={styles.macroBadge}>
+														<Text style={[styles.macroBadgeLabel, { color: colors.textSecondary }]}>C</Text>
+														<Text style={[styles.macroBadgeValue, { color: colors.text }]}>{food.carbs}g</Text>
+													</View>
+												)}
+												{food.fat > 0 && (
+													<View style={styles.macroBadge}>
+														<Text style={[styles.macroBadgeLabel, { color: colors.textSecondary }]}>F</Text>
+														<Text style={[styles.macroBadgeValue, { color: colors.text }]}>{food.fat}g</Text>
+													</View>
+												)}
+											</View>
+										)}
+									</View>
+
+									<TouchableOpacity style={[styles.addIconButton, { borderColor: colors.border }]}>
+										<MaterialIcons name="add" size={20} color={colors.accent} />
+									</TouchableOpacity>
 								</View>
+							</TouchableOpacity>
+						))}
+					</>
+				)}
 
-								<TouchableOpacity style={[styles.addIconButton, { borderColor: colors.border }]}>
-									<MaterialIcons name="add" size={20} color={colors.accent} />
-								</TouchableOpacity>
-							</View>
-						</TouchableOpacity>
-					))}
-				</>
-			)}
+				<View style={styles.footer} />
+			</ScrollView>
 
-			<View style={styles.footer} />
-		</ScrollView>
+			{showBlur && <BlurView intensity={90} style={[styles.blurHeader, { height: insets.top }]} />}
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
+	wrapper: {
+		flex: 1,
+	},
 	container: {
 		flex: 1,
 		padding: 16,
+	},
+	blurHeader: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		zIndex: 100,
+		pointerEvents: "none",
 	},
 	headerRow: {
 		flexDirection: "row",
