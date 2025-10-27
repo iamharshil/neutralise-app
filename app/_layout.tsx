@@ -1,6 +1,10 @@
 import { useAuthStore } from "@/hooks/use-auth";
+import { defaultConfig } from "@tamagui/config/v4";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+import { createTamagui, TamaguiProvider } from "tamagui";
+
+const config = createTamagui(defaultConfig);
 
 export default function RootLayout() {
 	useEffect(() => {
@@ -11,9 +15,11 @@ export default function RootLayout() {
 	}, []);
 
 	return (
-		<Stack screenOptions={{ headerShown: false }}>
-			<Stack.Screen name="(auth)" />
-			<Stack.Screen name="(tabs)" />
-		</Stack>
+		<TamaguiProvider config={config}>
+			<Stack screenOptions={{ headerShown: false }}>
+				<Stack.Screen name="(auth)" />
+				<Stack.Screen name="(tabs)" />
+			</Stack>
+		</TamaguiProvider>
 	);
 }

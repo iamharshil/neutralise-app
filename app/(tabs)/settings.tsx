@@ -2,7 +2,8 @@ import { useAuthStore } from "@/hooks/use-auth";
 import fetchCall from "@/utils/api";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import { Button } from "tamagui";
 
 export default function Settings() {
 	const router = useRouter();
@@ -25,10 +26,10 @@ export default function Settings() {
 		<View style={styles.container}>
 			<Text style={styles.title}>Settings Page</Text>
 
-			<Pressable style={styles.logoutButton} onPress={handleLogout}>
+			<Button style={styles.logoutButton} onPress={handleLogout}>
 				<MaterialIcons style={styles.logoutIcon} name="logout" size={20} />
 				<Text style={styles.logoutText}>Log Out</Text>
-			</Pressable>
+			</Button>
 		</View>
 	);
 }
@@ -37,14 +38,14 @@ const styles = StyleSheet.create({
 	container: { flex: 1, padding: 20, backgroundColor: "#f9f9f9" },
 	title: { fontSize: 28, fontWeight: "bold", textAlign: "center", marginTop: 40 },
 	logoutButton: {
-		backgroundColor: "red",
-		color: "white",
+		// backgroundColor: "red",
+		// color: "white",
 		marginTop: 10,
-		flexDirection: "row",
-		height: 40,
-		borderRadius: 10,
-		justifyContent: "center",
-		alignItems: "center",
+		// flexDirection: "row",
+		// height: 40,
+		// borderRadius: 10,
+		// justifyContent: "center",
+		// alignItems: "center",
 	},
 	logoutIcon: {
 		marginRight: 5,
